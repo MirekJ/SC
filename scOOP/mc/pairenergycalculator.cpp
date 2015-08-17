@@ -906,6 +906,7 @@ double PairEnergyCalculator::eattractivePscCpsc(int patchnum1, int patchnum2) {
     a = DOT(vec1,part2->patchdir[patchnum2]);
     f2 = fanglScale(a, 1+2*patchnum2);
 
+
     /*7- put it all together*/
     atrenergy *=f0*f1*f2;
     //if (atrenergy < 0) printf ("atraction %f\n",atrenergy);

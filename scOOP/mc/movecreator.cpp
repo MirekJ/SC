@@ -922,6 +922,7 @@ void MoveCreator::clusterRotate(vector<int> &cluster, double max_angle) {
 
     //shift position to geometrical center
     for(unsigned int i=0; i<cluster.size(); i++) {
+        conf->geo.usePBC(&conf->pvec[cluster[i]]);
         //shift position to geometrical center
         conf->pvec[cluster[i]].pos.x -= cluscm.x;
         conf->pvec[cluster[i]].pos.y -= cluscm.y;
@@ -1349,14 +1350,6 @@ double MoveCreator::muVTMove() {
             insert[0].init(&topo.ia_params[insert[0].type][insert[0].type]);
             assert(insert[0].testInit());
 
-            // check overlap
-            if(conf->overlapAll(&insert[0], topo.ia_params)) {
-                insert.clear();
-                topo.moleculeParam[molType].insRej++;
-                topo.moleculeParam[molType].muVtAverageParticles +=  conf->pvec.molCountOfType(molType);
-                return 0; // overlap detected, move rejected
-            }
-
             energy = calcEnergy->oneToAll(&insert[0], NULL, NULL);
 
             // accept with probability -> V/N+1 * e^(ln(a*Nav*1e-27))  -U(new)/kT)
@@ -1644,7 +1637,9 @@ double MoveCreator::clusterMoveGeom(long target) {
         reflection.patchsides[1]*=-1.0;
         reflection.patchsides[2]*=-1.0;
         reflection.patchsides[3]*=-1.0;
-        conf->geo.usePBC(&reflection); // bring reflected particle into box (if not particles could start to spread too far and numerical errors acumulate!)
+        reflection.chdir[0]     *=-1.0;
+        reflection.chdir[1]     *=-1.0;
+        conf->geo.usePBC(&reflection); // bring reflected particle into box (if not used particles could start to spread too far and numerical errors acumulate!)
 
         //Iterate through reflection "Neighbours"
         for (unsigned int i = 0; i < conf->pvec.size(); i++){
