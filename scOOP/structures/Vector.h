@@ -255,8 +255,12 @@ public:
         Vector  vec     = axis,                                 // Vector that will be returned, at first initialized as unit vector in direction of cone axis
                 axis2   = getRandomOrthogonalVector(axis);      // Randomly distributed vector in plane perpendicular to cone axis
 
+<<<<<<< HEAD
         double  cosAngle = cos(maxangle),                       // Calculate cos() of maxangle defined by angle of cone
                 multiplaier = ran2()*(1-cosAngle)+cosAngle;     // Get coordinate of output vector in direction of cone axis
+=======
+        double  multiplaier = ran2()*sin(maxangle);                // multiplaier = (r*sin(angle))*rand[0, 1] ==> [r*sin(angle), 0] ==> get multiplaier to get vectors to project on angle arch
+>>>>>>> 7addede0107eacb3fe9cf53689749deda80c6ebf
 
         vec.normalise();                                        // Before we start working we want to normalise both axis
         axis2.normalise();

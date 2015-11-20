@@ -1,6 +1,7 @@
 /** @file main.cpp*/
 
 #include <fstream>
+#include <ctime>
 
 #include "mc/inicializer.h"
 #include "mc/updater.h"
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
          << "-------------------------------------" << endl;
 
 #ifdef EXTRA_HYDROPHOBIC_ALL_BODY_ATTRACTION
-    cout << "\n!!! Extra hydrophobic interaction in e_cpsc_cpsc added\n" << endl;
+    cout << "\n!!! Extra hydrophobic interaction in e_cpsc_cpsc added, strenght: " << E_ISO << endl;
 #endif
 
 
@@ -110,6 +111,22 @@ int main(int argc, char** argv) {
         if(topo.moleculeParam[i].activity != -1.0)
             topo.gcSpecies++;
     }
+
+    //
+    //  PRE-COMPUTE PAIRLIST CUTOFF
+    //
+    for(int i=0; i< MAXT; i++) {
+        for(int j=0; j<MAXT; j++) {
+            sim.max_dist_squared[i][j] = AVER(sim.trans[i].mx, sim.trans[j].mx);
+            sim.max_dist_squared[i][j] *= (1 + sim.pairlist_update) * 2;
+            sim.max_dist_squared[i][j] += topo.maxcut;
+            sim.max_dist_squared[i][j] *= sim.max_dist_squared[i][j]; /* squared */
+            if(sim.cell < sim.max_dist_squared[i][j])
+                sim.cell = sim.max_dist_squared[i][j];
+        }
+    }
+
+    //cout << "CellList cell size: " << sqrt(sim.cell) << endl;
 
     updater = new Updater(&sim, &conf, &files);
 
@@ -214,7 +231,9 @@ int main(int argc, char** argv) {
 
     cout << "Production run:  "<< sim.nsweeps << " sweeps\n" << endl;
 
+    sim.all = clock();
     updater->simulate(sim.nsweeps, 0, sim.paramfrq, sim.report);
+    sim.all = clock() - sim.all;
 
 #ifdef ENABLE_MPI
         printf ("   MPI replica changeT / changeP / acceptance ratio: \t %.6f   /   %.6f  /  %.6f\n\n", sim.mpiexch.mx,sim.mpiexch.angle,RATIO(sim.mpiexch));
@@ -274,7 +293,11 @@ int main(int argc, char** argv) {
     MPI_Finalize();
 #endif
 
-    printf ("\nDone\n\n");
+    cout << "\nSimulation time:" << (double)sim.all / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Energy calculation time:" << 100.0*(double)sim.energyCalc / sim.all << " %" << endl;
+    cout << "PairList generation time:" << 100.0*(double)sim.pairList / sim.all << " %" << endl;
+
+    cout << "\nDONE" << endl;
 
     return 0;
 }
