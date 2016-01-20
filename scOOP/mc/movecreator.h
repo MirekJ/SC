@@ -124,6 +124,15 @@ private:
     double partAxialRotate(long target);
 
     /**
+     * @brief fixAngle1Rotation():  Take a particle in chain and rotate it around direction of neighbour particle in chain(previous or next)
+     *                              such rotation would not change angle between two neighbour particle so that it will help with sampling of configurations
+     *                              in case of particle in chein where constrains on angle between particles are made
+     * @param target                Possition of particle in ParticleVector conf->pvec[]
+     * @return edriftchange
+     */
+    double fixAngle1Rotation(long target);
+
+    /**
      * @brief chaindisplace
      * @param target
      * @return

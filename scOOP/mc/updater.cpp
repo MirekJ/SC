@@ -212,6 +212,7 @@ void Updater::simulate(long nsweeps, long adjust, long paramfrq, long report) {
                 edriftchanges += move.switchTypeMove();
             } else {
                 // single particle moves
+                dumpMovie(sweep);
                 edriftchanges += move.particleMove();
             }
             //TEST OVERLAPS

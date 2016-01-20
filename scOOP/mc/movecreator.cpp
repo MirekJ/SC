@@ -2,6 +2,7 @@
 
 #include "movecreator.h"
 #include <iomanip>
+#include <algorithm>
 
 #ifdef ENABLE_MPI
 # include <mpi.h>
@@ -24,11 +25,12 @@ double MoveCreator::particleMove() {
         /*=== Rotation step ===*/
         // TODO: v pripade Isotropnich kouli nema pohyb ucinost ... mozna dat vyjimku pro koule
         // BTW: partAcialRotate pro uhel 180.0 a pouziti Vector::getRandomUnitConeUniform by se mel chovat stejne jako normalni partRotate ....
-        if(sim->coneAngle == 0.0){
-            edriftchanges = partRotate(target);
-        } else {
-            edriftchanges = partAxialRotate(target);
-        }
+        edriftchanges = fixAngle1Rotation(target);
+//        if(sim->coneAngle == 0.0){
+//            edriftchanges = partRotate(target);
+//        } else {
+//            edriftchanges = partAxialRotate(target);
+//        }
 
     }
     /*=== End particle move step ===*/
@@ -324,6 +326,60 @@ double MoveCreator::partAxialRotate(long target){
     return edriftchanges;
 }
 
+double MoveCreator::fixAngle1Rotation(long target){
+    int clockwise = ( ran2() < 0.5 ) ? 1 : 2;   // 1 - clockwise rotaion
+                                                // 2 - anti-clockwise rotation
+
+    double   edriftchanges   =   0.0,
+             energyold       =   calcEnergy->oneToAll(target),
+             energynew       =   0.0,
+             cosAngle        =   cos(sim->stat.rot[conf->pvec[target].type].angle*ran2()),
+             sinAngle        =   (clockwise == 1) ? sqrt(1.0 - cosAngle*cosAngle) : -sqrt(1.0 - cosAngle*cosAngle);
+
+    Particle origpart        =   conf->pvec[target];
+
+    Molecule targetMol = conf->pvec.getMolOfPart(target);
+
+    std::vector<int>::iterator targetSeqPos = find(targetMol.begin(), targetMol.end(), target);
+
+    //=============================================//
+    //              Rotate particle                //
+    //=============================================//
+    // Now we roate particle around direction vector of previous particle in chain, if particle is first in chain we will rotate around direction of next particle
+    if ( targetSeqPos != targetMol.begin() ) {              // well target isnt first particle in chain
+        conf->pvec[target].pos+=-1.0*conf->pvec[*(targetSeqPos - 1)].pos;
+        conf->pvec[target].pos.rotate( conf->pvec[*(targetSeqPos - 1)].dir, cosAngle, sinAngle );
+        conf->pvec[target].pos+=origpart.pos;
+        conf->pvec[target].pscRotate(   sim->stat.rot[conf->pvec[target].type].angle*ran2(),
+                                        topo.ia_params[conf->pvec[target].type][conf->pvec[target].type].geotype[0],
+                                        conf->pvec[*(targetSeqPos - 1)].dir,
+                                        clockwise);
+    } else {                                                // well target is first particle in chain so we will rotate it around next particle instead of previous
+        conf->pvec[target].pos+=-1.0*conf->pvec[*(targetSeqPos + 1)].pos;
+        conf->pvec[target].pos.rotate( conf->pvec[*(targetSeqPos + 1)].dir, cosAngle, sinAngle );
+        conf->pvec[target].pos+=origpart.pos;
+        conf->pvec[target].pscRotate(   sim->stat.rot[conf->pvec[target].type].angle*ran2(),
+                                        topo.ia_params[conf->pvec[target].type][conf->pvec[target].type].geotype[0],
+                                        conf->pvec[*(targetSeqPos + 1)].dir,
+                                        clockwise);
+    }
+
+    //=============================================//
+    //                MC criterium                 //
+    //=============================================//
+    energynew = calcEnergy->oneToAll(target); // Calculate energy change of target with rest of system
+
+    cout<< calcEnergy->chainInner(targetMol)<< endl;
+
+    if (moveTry(energyold, energynew, sim->temper)){
+        // move was rejected
+        conf->pvec[target] = origpart; // return to old configuration
+    } else {
+        // move was accepted
+        edriftchanges = energynew - energyold;
+    }
+    return edriftchanges;
+}
 
 double MoveCreator::switchTypeMove() {
     double edriftchanges=0.0, energy,enermove,wlener=0.0;
