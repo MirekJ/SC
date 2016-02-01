@@ -220,6 +220,89 @@ public:
             }
         }
     }
+
+    void rotate( Quat &quaternion, int geotype ) {
+        if ( geotype >= SP ){ // in case of symetric spheres rotation doesnt make sense
+            return;
+        }
+
+        double t2, t3, t4, t5, t6, t7, t8, t9, t10;
+        double d1, d2, d3, d4, d5, d6, d7, d8, d9 , newx, newy, newz;
+        int k,m;
+
+        /* do quaternion rotation*/
+        t2  =  quaternion.w * quaternion.x;
+        t3  =  quaternion.w * quaternion.y;
+        t4  =  quaternion.w * quaternion.z;
+        t5  = -quaternion.x * quaternion.x;
+        t6  =  quaternion.x * quaternion.y;
+        t7  =  quaternion.x * quaternion.z;
+        t8  = -quaternion.y * quaternion.y;
+        t9  =  quaternion.y * quaternion.z;
+        t10 = -quaternion.z * quaternion.z;
+
+        d1 = t8 + t10;
+        d2 = t6 - t4;
+        d3 = t3 + t7;
+        d4 = t4 + t6;
+        d5 = t5 + t10;
+        d6 = t9 - t2;
+        d7 = t7 - t3;
+        d8 = t2 + t9;
+        d9 = t5 + t8;
+
+        /*rotate spherocylinder direction vector2*/
+        newx = 2.0 * ( d1*this->dir.x + d2*this->dir.y + d3*this->dir.z ) + this->dir.x;
+        newy = 2.0 * ( d4*this->dir.x + d5*this->dir.y + d6*this->dir.z ) + this->dir.y;
+        newz = 2.0 * ( d7*this->dir.x + d8*this->dir.y + d9*this->dir.z ) + this->dir.z;
+        this->dir.x = newx;
+        this->dir.y = newy;
+        this->dir.z = newz;
+
+        m=1;
+        if ( (geotype != SCN) && (geotype != SCA) ) {
+            if ( (geotype == TPSC) || (geotype == TCPSC) || (geotype == TCHPSC) || (geotype == TCHCPSC) )
+                m=2;
+            for (k=0;k<m;k++) {
+                /*rotate patch direction vector2*/
+                newx = 2.0 * ( d1*this->patchdir[k].x + d2*this->patchdir[k].y + d3*this->patchdir[k].z ) + this->patchdir[k].x;
+                newy = 2.0 * ( d4*this->patchdir[k].x + d5*this->patchdir[k].y + d6*this->patchdir[k].z ) + this->patchdir[k].y;
+                newz = 2.0 * ( d7*this->patchdir[k].x + d8*this->patchdir[k].y + d9*this->patchdir[k].z ) + this->patchdir[k].z;
+                this->patchdir[k].x = newx;
+                this->patchdir[k].y = newy;
+                this->patchdir[k].z = newz;
+
+                /*rotate patch sides vector2s*/
+                newx = 2.0 * ( d1*this->patchsides[0+2*k].x + d2*this->patchsides[0+2*k].y + d3*this->patchsides[0+2*k].z ) + this->patchsides[0+2*k].x;
+                newy = 2.0 * ( d4*this->patchsides[0+2*k].x + d5*this->patchsides[0+2*k].y + d6*this->patchsides[0+2*k].z ) + this->patchsides[0+2*k].y;
+                newz = 2.0 * ( d7*this->patchsides[0+2*k].x + d8*this->patchsides[0+2*k].y + d9*this->patchsides[0+2*k].z ) + this->patchsides[0+2*k].z;
+                this->patchsides[0+2*k].x = newx;
+                this->patchsides[0+2*k].y = newy;
+                this->patchsides[0+2*k].z = newz;
+                newx = 2.0 * ( d1*this->patchsides[1+2*k].x + d2*this->patchsides[1+2*k].y + d3*this->patchsides[1+2*k].z ) + this->patchsides[1+2*k].x;
+                newy = 2.0 * ( d4*this->patchsides[1+2*k].x + d5*this->patchsides[1+2*k].y + d6*this->patchsides[1+2*k].z ) + this->patchsides[1+2*k].y;
+                newz = 2.0 * ( d7*this->patchsides[1+2*k].x + d8*this->patchsides[1+2*k].y + d9*this->patchsides[1+2*k].z ) + this->patchsides[1+2*k].z;
+                this->patchsides[1+2*k].x = newx;
+                this->patchsides[1+2*k].y = newy;
+                this->patchsides[1+2*k].z = newz;
+            }
+        }
+
+        m=1;
+        if ( (geotype == CHPSC) || (geotype == CHCPSC) || (geotype == TCHPSC) || (geotype == TCHCPSC) ) {
+            if ( (geotype == TCHPSC) || (geotype == TCHCPSC) )
+                m=2;
+            for (k=0;k<m;k++) {
+                /*rotate chiral direction vector2*/
+                newx = 2.0 * ( d1*this->chdir[k].x + d2*this->chdir[k].y + d3*this->chdir[k].z ) + this->chdir[k].x;
+                newy = 2.0 * ( d4*this->chdir[k].x + d5*this->chdir[k].y + d6*this->chdir[k].z ) + this->chdir[k].y;
+                newz = 2.0 * ( d7*this->chdir[k].x + d8*this->chdir[k].y + d9*this->chdir[k].z ) + this->chdir[k].z;
+                this->chdir[k].x = newx;
+                this->chdir[k].y = newy;
+                this->chdir[k].z = newz;
+            }
+        }
+    }
 };
 
 #endif // PARTICLE_H

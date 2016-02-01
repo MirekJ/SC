@@ -36,6 +36,26 @@ public:
     }
 
     /**
+     * @brief Transfer vector in reduce internal coordinates into real coordinates
+     * @param vec
+     */
+    void toReal( Vector &vec ) {
+        vec.x *= this->box.x;
+        vec.y *= this->box.y;
+        vec.z *= this->box.z;
+    }
+
+    /**
+     * @brief Transfer vector in real coordinates into reduce internal reprezentation
+     * @param vec
+     */
+    void toReduce( Vector &vec ) {
+        vec.x /= this->box.x;
+        vec.y /= this->box.y;
+        vec.z /= this->box.z;
+    }
+
+    /**
      * @brief Use of periodic boundary conditions on Particle
      * Function return particle back in central box
      * @param part

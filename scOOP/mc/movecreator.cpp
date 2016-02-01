@@ -1615,71 +1615,88 @@ double MoveCreator::clusterMoveGeom(long target) {
      * Liu, Jiwen, and Erik Luijten. "Rejection-free geometric cluster algorithm for complex fluids." Physical review letters 92.3 (2004): 035504.
      * DOI: 10.1103/PhysRevLett.92.035504
     */
+    double maxDisplacement= 0.5;
+    double rotationAngle = 60.0 * DEGTORAD;
 
     double edriftchanges = calcEnergy->allToAll(), cluster[MAXN];
-    Vector r_center;
 
-    /*=============================================*/
-    /*            Set reflection center            */
-    /*=============================================*/
-    /*There exists two ways how to select reflection center, Global and Local.
-     * Global ---- select random point in simulation box as reflection center
-     * Local  ---- select vector from selected particle of random length in interval (0; max_len>
-     *
-     * Both ways of selecting reflection center should be equal where in case of Local selection maximal displacement (max_len) must be set.
-     *
-     * From test simulations on rather small systems it seems Global relection have faster convergence
-    */
+    std::vector<int>    forwardMove,  // vector to store indexes of particles that will move in direction of move
+                        backwardMove; // vector to store indexes of particles that will move against direction of move (mostly particles that vould overlap with moving cluster)
 
-    /*____________Global____________*/
-    r_center = conf->geo.randomPos();
+    /*===========================================================*/
+    /*      Create random direction and rotation of cluster      */
+    /*===========================================================*/
 
-    /*____________Local (displacement like)____________*/
-//    double max_displacement= 1.5;
-//    r_center.randomUnitSphere();// create unit random vector
-//    r_center *= ran2() * max_displacement;// set displacement from range [0:max_displacement]
-//    r_center += conf->pvec[target].pos;// set center of reflection to be shifted by length of DISPLACEMENT in random direction from target
+    /*____________Random Cluster Displacement____________*/
+    Vector  forwardCenter = conf->pvec[target].pos,
+            backwardCenter;
 
-    Particle reflection;
-    Molecule selected_chain;
-    std::vector<Molecule> chainsToFix; // thse are all cahins that might be disturbed by application of PBC
-    int counter= 0, num_particles=0;
+    backwardCenter.randomUnitSphere();
+    backwardCenter *= ran2() * maxDisplacement;
+    backwardCenter += forwardCenter;
+
+    /*____________Random Rotation Axis____________*/
+    Vector rotAxis;
+    rotAxis.randomUnitSphere();
+
+    /*____________Rotation Quaterninon____________*/
+    Quat quaternion( rotAxis, rotationAngle * ran2() );
+
+    /*____________TMP storage variables____________*/
+    Particle dummyParticle;
+
+    forwardMove.push_back(target);
+    int forwardCounter = 0, backwardCounter = 0;
     double energy_old, energy_new;
 
-    /*=============================================*/
-    /*     Addition of particles into cluster      */
-    /*=============================================*/
-    /*
-     * Here we chose to add whole chain into cluster if one particle of chain is includedtarget in cluster
-     * This make move slightly faster but
-     * !!!!SIMULATION OF CHAINS WITHOUT SINGLE PARTICLE MOVES CANT CONVERGE!!!!
-     *
-     * TODO:    change it in way that intra chain energy is used to determine if other particles from chain should be added
-     *          into cluster
-    */
+    while(  forwardMove.size()  >= forwardCounter &&
+            backwardMove.size() >= backwardCounter ) {
+        if ( forwardMove.size() >= forwardCounter ){
+            dummyParticle = conf->pvec[forwardCounter];
+            dummyParticle.pos -= forwardCenter;
+            conf->geo.toReal( dummyParticle.pos );
+            dummyParticle.pos.rotate( quaternion );
+            conf->geo.toReduce( dummyParticle.pos );
 
-    double molecule_size;
-    //topo.moleculeParam[conf->pvec[target].molType].particleTypes.size() == number of particles in chain ... special case is single particle of length 1
-    molecule_size = topo.moleculeParam[conf->pvec[target].molType].particleTypes.size();
-    if ( molecule_size == 1 ){
-        cluster[num_particles] = target;
-        num_particles++;
-    }else{
-        selected_chain = conf->pvec.getMolOfPart(target);
-        chainsToFix.push_back(selected_chain);
-        for(unsigned int i=0; i < selected_chain.size(); i++){
-            cluster[num_particles] = selected_chain[i];
-            num_particles++;
+
+            forwardCounter++;
+        }
+
+        if ( backwardMove.size() >= backwardCounter ){
+
         }
     }
+
+
+//    double molecule_size;
+//    //topo.moleculeParam[conf->pvec[target].molType].particleTypes.size() == number of particles in chain ... special case is single particle of length 1
+//    molecule_size = topo.moleculeParam[conf->pvec[target].molType].particleTypes.size();
+//    if ( molecule_size == 1 ){
+//        cluster[num_particles] = target;
+//        num_particles++;
+//    }else{
+//        selected_chain = conf->pvec.getMolOfPart(target);
+//        chainsToFix.push_back(selected_chain);
+//        for(unsigned int i=0; i < selected_chain.size(); i++){
+//            cluster[num_particles] = selected_chain[i];
+//            num_particles++;
+//        }
+//    }
 
     /*=============================================*/
     /*            Cluster Creation Loop            */
     /*=============================================*/
-    do{
-        reflection = conf->pvec[cluster[counter]];// copy old particle into reflected particle
-        //Reflect particle cluster[counter] by point reflection by center r_center point
-        reflection.pos           = 2.0*r_center - reflection.pos;// reflect center of particle around r_center
+//    Vector shiftVector;
+//    do{
+//        newParticles = conf->pvec[cluster[counter]];// copy old particle into reflected particle
+//        //Reflect particle cluster[counter] by point reflection by center r_center point
+//        shiftVector           = newParticles.pos - conf->pvec[cluster[1]].pos;// reflect center of particle around r_center
+//        conf->geo.toReal( shiftVector );
+//        shiftVector.rotate( quaternion );
+//        conf->geo.toReduce( shiftVector );
+//        newParticles.pos =
+
+//        newParticles.pscRotate(rotationAngle, topo.ia_params[newParticles.type][newParticles.type].geotype,rotAxis, 2); //might be problem if particles can change geotypes !!!
 //        reflection.dir          *=1.0;// reflect orientation of particle
 //        reflection.patchdir[0]  *=-1.0;// reflect orientation of patch1
 //        reflection.patchdir[1]  *=-1.0;// reflect orientation of patch2
@@ -1689,39 +1706,39 @@ double MoveCreator::clusterMoveGeom(long target) {
 //        reflection.patchsides[3]*=-1.0;
 //        reflection.chdir[0]     *=-1.0;
 //        reflection.chdir[1]     *=-1.0;
-        conf->geo.usePBC(&reflection);
+//        conf->geo.usePBC(&newParticles);
 
         // bring reflected particle into box (if not particles could start to spread too far and numerical errors acumulate!)
 
         //Iterate through reflection "Neighbours"
-        for (unsigned int i = 0; i < conf->pvec.size(); i++){
-            if (!isInCluster(cluster, num_particles, i)){
-                energy_old = calcEnergy->p2p(cluster[counter], i);
-                energy_new = calcEnergy->p2p(&reflection, i);
-                if (ran2() < (1-exp((energy_old-energy_new)/sim->temper))){//ran2() < (1-exp(-1.0*((energy_new-energy_old)/sim->temper))) acceptance criteria vis. Reference
+//        for (unsigned int i = 0; i < conf->pvec.size(); i++){
+//            if (!isInCluster(cluster, num_particles, i)){
+//                energy_old = calcEnergy->p2p(cluster[counter], i);
+//                energy_new = calcEnergy->p2p(&newParticles, i);
+//                if (ran2() < (1-exp((energy_old-energy_new)/sim->temper))){//ran2() < (1-exp(-1.0*((energy_new-energy_old)/sim->temper))) acceptance criteria vis. Reference
                     //Addition of chain into cluster
                     //-----------------------------------------------------
-                    molecule_size = topo.moleculeParam[conf->pvec[i].molType].particleTypes.size();
-                    if(molecule_size == 1){
-                        cluster[num_particles] = i;
-                        num_particles++;
-                    }else{
-                        selected_chain = conf->pvec.getMolOfPart(i);
-                        chainsToFix.push_back(selected_chain);
-                        for(unsigned int t=0; t < selected_chain.size(); t++){
-                            cluster[num_particles] = selected_chain[t];
-                            num_particles++;
-                        }
-                    }
-                    //-----------------------------------------------------
-                }
-            }
-        }
-        conf->pvec[cluster[counter]] = reflection;
-        counter++;
-    }while(counter < num_particles);
-    for ( std::vector<Molecule>::iterator it = chainsToFix.begin(); it != chainsToFix.end(); ++it ){
-        conf->makeMoleculeWhole(&(*it));
-    }
+//                    molecule_size = topo.moleculeParam[conf->pvec[i].molType].particleTypes.size();
+//                    if(molecule_size == 1){
+//                        cluster[num_particles] = i;
+//                        num_particles++;
+//                    }else{
+//                        selected_chain = conf->pvec.getMolOfPart(i);
+//                        chainsToFix.push_back(selected_chain);
+//                        for(unsigned int t=0; t < selected_chain.size(); t++){
+//                            cluster[num_particles] = selected_chain[t];
+//                            num_particles++;
+//                        }
+//                    }
+//                    //-----------------------------------------------------
+//                }
+//            }
+//        }
+//        conf->pvec[cluster[counter]] = newParticles;
+//        counter++;
+//    }while(counter < num_particles);
+//    for ( std::vector<Molecule>::iterator it = chainsToFix.begin(); it != chainsToFix.end(); ++it ){
+//        conf->makeMoleculeWhole(&(*it));
+//    }
     return calcEnergy->allToAll()-edriftchanges;
 }
