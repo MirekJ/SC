@@ -50,6 +50,8 @@ public:
      */
     double clusterMoveGeom(long target);
 
+    double clusterMoveTrans(long target);
+
     double printClustersConf();
 
     /**

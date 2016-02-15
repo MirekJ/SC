@@ -2,6 +2,7 @@
 
 #include "movecreator.h"
 #include <iomanip>
+#include <algorithm>
 
 #ifdef ENABLE_MPI
 # include <mpi.h>
@@ -1723,5 +1724,47 @@ double MoveCreator::clusterMoveGeom(long target) {
     for ( std::vector<Molecule>::iterator it = chainsToFix.begin(); it != chainsToFix.end(); ++it ){
         conf->makeMoleculeWhole(&(*it));
     }
+    return calcEnergy->allToAll()-edriftchanges;
+}
+
+double MoveCreator::clusterMoveTrans(long target) {
+    double edriftchanges = calcEnergy->allToAll();
+
+    double energy_old, energy_new;
+    Vector transVec = conf->geo.randomPos();
+    Particle newParticle;
+
+    //std::vector<std::pair<bool,long>> movingParticles;//if true -- > particles moves in direction of transVec otherwise against direction
+    std::vector<bool> clusterMoveDir;
+    std::vector<long> clusterParticles;
+    unsigned int counter = 0;
+
+    clusterMoveDir.push_back(true);
+    clusterParticles.push_back(target);
+    do {
+        newParticle = conf->pvec[clusterParticles[counter]];
+        if (clusterMoveDir[counter]){
+            newParticle.pos += transVec;
+        } else {
+            newParticle.pos -= transVec;
+        }
+        for(unsigned int i = 0; i < conf->pvec.size(); i++){
+            if ( std::find(clusterParticles.begin(), clusterParticles.end(), i) == clusterParticles.end() ) {
+                energy_old = calcEnergy->p2p(clusterParticles[counter], i);
+                energy_new = calcEnergy->p2p(&newParticle, i);
+                if (ran2() < (1-exp((energy_old-energy_new)/sim->temper))){
+                    clusterParticles.push_back(i);
+                    if((energy_old-energy_new) < 0){
+                        clusterMoveDir.push_back(true);
+                    } else{
+                        clusterMoveDir.push_back(false);
+                    }
+                }
+            }
+        }
+
+        conf->pvec[clusterParticles[counter]] = newParticle;
+        counter++;
+    } while( clusterParticles.size() >= counter  );
     return calcEnergy->allToAll()-edriftchanges;
 }
