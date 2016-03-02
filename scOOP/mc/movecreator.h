@@ -52,6 +52,8 @@ public:
 
     double clusterMoveTrans(long target);
 
+    double clusterMoveRotat(long target);
+
     double printClustersConf();
 
     /**

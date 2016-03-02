@@ -118,6 +118,35 @@ public:
         return true;
     }
 
+    void pscRotateAround(Quat q, Vector point){
+        pos.x -=  point.x;
+        pos.y -=  point.y;
+        pos.z -=  point.z;
+//        //scale things by geo.box not to have them distorted
+//        pos.x *= conf->geo.box.x;
+//        pos.y *= conf->geo.box.y;
+//        pos.z *= conf->geo.box.z;
+        //do rotation
+        pos.rotate(q);
+        dir.rotate(q);
+        patchdir[0].rotate(q);
+        patchdir[1].rotate(q);
+        chdir[0].rotate(q);
+        chdir[1].rotate(q);
+        patchsides[0].rotate(q);
+        patchsides[1].rotate(q);
+        patchsides[2].rotate(q);
+        patchsides[3].rotate(q);
+//        //sclae back
+//        pos.x /= conf->geo.box.x;
+//        pos.y /= conf->geo.box.y;
+//        pos.z /= conf->geo.box.z;
+        //shift positions back
+        pos.x += point.x;
+        pos.y += point.y;
+        pos.z += point.z;
+    }
+
     inline void rotateRandom(double max_angle, int geotype) {
         pscRotate(max_angle * ran2() , geotype, Vector::getRandomUnitSphere());
     }
