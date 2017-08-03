@@ -365,11 +365,30 @@ private:
             printf("ERROR: Paralllel tempering at single core does not work.\n\n");
             exit(1);
         }
-        dtemp = ((1.0/temper)-(1.0/paraltemper))/(mpinprocs-1);
-        for(int i=0; i<mpinprocs; i++) {
-            pTemp.push_back( temper/(1.0-i*temper*dtemp) );
+
+        //TEMPERATURE READING/ASSIGN
+        FILE *temperFile;
+        if (files->exterTemperatures){
+            temperFile = fopen(files->temperatures, "r");
+            printf("File with temperatures was found and used to asigne temperatures to replicas.\n");
+            for(int i=0; i<mpinprocs; i++) {
+                if(fscanf(temperFile, "%lf\n", &temper) != EOF){
+                    pTemp.push_back( temper );
+                } else {
+                    printf("ERROR: Not enough temperatures supplid in temperature file!\n\n");
+                    exit(1);
+                }
+            }
+        } else {
+            temperFile = fopen(files->temperatures, "w");
+            dtemp = ((1.0/temper)-(1.0/paraltemper))/(mpinprocs-1);
+            for(int i=0; i<mpinprocs; i++) {
+                pTemp.push_back( temper/(1.0-i*temper*dtemp) );
+                fprintf(temperFile, "%f\n", temper/(1.0-i*temper*dtemp));
+            }
+            temper =  temper/(1.0-mpirank*temper*dtemp);
         }
-        temper =  temper/(1.0-mpirank*temper*dtemp);
+
         if ( (press != paralpress) && (mpinprocs <2) ) {
             printf("ERROR: Pressure replica exchange at single core does not work.\n\n");
             exit(1);
