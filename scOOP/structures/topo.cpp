@@ -607,7 +607,7 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
             fprintf (stderr, "TOPOLOGY ERROR: equilibrium angle cannot be negative: %f \n\n",bonddist);
             return 0;
         }
-        moleculeParam[i].angle1c = bondk;
+        moleculeParam[i].angle1c = bondk*DEGTORAD*DEGTORAD; //Multiplication due to fact that constant is applied on difference in radians rather then in degrees
         moleculeParam[i].angle1eq = bonddist*DEGTORAD;
         fprintf (stdout, "angle1: %f %f \n",moleculeParam[i].angle1c,moleculeParam[i].angle1eq);
         return 1;
