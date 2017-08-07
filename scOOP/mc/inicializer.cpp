@@ -1066,7 +1066,7 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
             fprintf (stderr, "TOPOLOGY ERROR: equilibrium angle cannot be negative: %f \n\n",bonddist);
             return 0;
         }
-        topo.moleculeParam[i].angle1c = bondk;
+        topo.moleculeParam[i].angle1c = bondk*DEGTORAD*DEGTORAD;
         topo.moleculeParam[i].angle1eq = bonddist*DEGTORAD;
         fprintf (stdout, "angle1: %f %f \n",topo.moleculeParam[i].angle1c,topo.moleculeParam[i].angle1eq);
         return 1;
