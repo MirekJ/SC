@@ -1127,7 +1127,9 @@ public:
 
         if ( ( distSq > topo.ia_params[part1->type][part2->type].rcutSq ) ||
              (topo.ia_params[part1->type][part2->type].epsilon == 0.0 ) ||
-             topo.ia_params[part1->type][part2->type].exclude ) { // cutoff or not interacting
+             topo.ia_params[part1->type][part2->type].exclude) { // cutoff or not interacting
+            atrenergy = 0.0;
+        }else if(conlist != nullptr && (conlist->conlist[0] == part2 || conlist->conlist[1] == part2)){
             atrenergy = 0.0;
         } else {
             bool firstCH, secondCH, firstT, secondT;
