@@ -15,7 +15,7 @@ extern Topo topo;
 
 void Inicializer::initTop() {
 
-    bool exclusions[MAXT][MAXT] = {false};
+    bool exclusions[MAXT][2][MAXT][2] = {false};
 
     readTopoFile(exclusions); // EXCLUDE LOADED CORRECTLY 7.8. 2015
 
@@ -455,7 +455,7 @@ void Inicializer::setParticlesParamss(MolIO* molecules, long *sysmoln, char **sy
 }
 
 
-void Inicializer::readTopoFile(bool exclusions[][MAXT]) {
+void Inicializer::readTopoFile(bool exclusions[MAXT][2][MAXT][2]) {
     char *dummy=NULL;
     char line[STRLEN], keystr[STRLEN], molname[STRLEN];
     unsigned size;
@@ -603,8 +603,8 @@ void *Inicializer::xMalloc(size_t num) {
 }
 
 
-int Inicializer::fillExclusions(char **pline, bool exlusions[][MAXT]) {
-    long num1,num2;
+int Inicializer::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
+    long num1,num2,num3,num4; //ok so to be able to distinguish between patches we load [EXCLUDE] in format : particle1ID patch1ID[0or1] particle2ID patchID[0or1]
     char *pline1, *pline2;
 
     num1 = strtol(*pline, &pline2, 10);
@@ -612,25 +612,34 @@ int Inicializer::fillExclusions(char **pline, bool exlusions[][MAXT]) {
     if ((int)strlen(pline2) > 0) {
         num2 = strtol(pline2, &pline1, 10);
         trim(pline1);
-        exlusions[num1][num2]=true;
-        exlusions[num2][num1]=true;
+        num3 = strtol(pline1, &pline2, 10);
+        trim(pline2);
+        num4 = strtol(pline2, &pline1, 10);
+        if( (num2 > 1 || num2 < 0) || (num4 > 1 || num4 < 0) ){
+            fprintf(stderr, " \e[91m\e[1mError\e[21m\e[97m in readin Topology exclusions, patch ID must me 0 or 1\n New [EXCLUDE] formate at each line particle1ID patch1ID[0or1] particle2ID patchID[0or1]\n\n");
+            return 0;
+        }else{
+            exlusions[num1][num2][num3][num4]=true;
+            exlusions[num3][num4][num1][num2]=true;
+        }
     } else {
         fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
         return 0;
     }
-    while ((int)strlen(pline1) > 0) {
-      num1 = strtol(pline1, &pline2, 10);
-      trim(pline2);
-      if ((int)strlen(pline2) > 0) {
-        num2 = strtol(pline2, &pline1, 10);
-        trim(pline1);
-        exlusions[num1][num2]=true;
-        exlusions[num2][num1]=true;
-      } else {
-        fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
-        return 0;
-      }
-    }
+
+//    while ((int)strlen(pline1) > 0) {
+//        num1 = strtol(pline1, &pline2, 10);
+//        trim(pline2);
+//        if ((int)strlen(pline2) > 0) {
+//            num2 = strtol(pline2, &pline1, 10);
+//            trim(pline1);
+//            exlusions[num1][num2]=true;
+//            exlusions[num2][num1]=true;
+//        } else {
+//            fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
+//            return 0;
+//        }
+//    }
     return 1;
 }
 

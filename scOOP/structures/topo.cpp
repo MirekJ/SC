@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-void Topo::genParamPairs(bool exclusions[MAXT][MAXT]) {
+void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
     int a[2];
     int len;
     double length = 0; // The length of a PSC, currently only one is allow, ie implemented
@@ -127,7 +127,16 @@ void Topo::genParamPairs(bool exclusions[MAXT][MAXT]) {
     }
     for (int i=0;i<MAXT;i++) {
         for (int j=0;j<MAXT;j++) {
-            ia_params[i][j].exclude = exclusions[i][j];
+            ia_params[i][j].exclude_p1_p1 = exclusions[i][0][j][0];
+            ia_params[i][j].exclude_p1_p2 = exclusions[i][0][j][1];
+            ia_params[i][j].exclude_p2_p1 = exclusions[i][1][j][0];
+            ia_params[i][j].exclude_p2_p2 = exclusions[i][1][j][1];
+        }
+    }
+
+    for (int i=0;i<MAXT;i++) {
+        for (int j=0;j<MAXT;j++) {
+            if( ia_params[i][j].exclude_p1_p1 && ia_params[i][j].exclude_p1_p2 && ia_params[i][j].exclude_p2_p1 && ia_params[i][j].exclude_p2_p2 ) ia_params[i][j].exclude = true;
         }
     }
 
@@ -398,8 +407,8 @@ int Topo::fillTypes(char **pline) {
     return 1;
 }
 
-int Topo::fillExclusions(char **pline, bool exlusions[][MAXT]) {
-    long num1,num2;
+int Topo::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
+    long num1,num2,num3,num4; //ok so to be able to distinguish between patches we load [EXCLUDE] in format : particle1ID patch1ID[0or1] particle2ID patchID[0or1]
     char *pline1, *pline2;
 
     num1 = strtol(*pline, &pline2, 10);
@@ -407,25 +416,36 @@ int Topo::fillExclusions(char **pline, bool exlusions[][MAXT]) {
     if ((int)strlen(pline2) > 0) {
         num2 = strtol(pline2, &pline1, 10);
         trim(pline1);
-        exlusions[num1][num2]=true;
-        exlusions[num2][num1]=true;
+        num3 = strtol(pline1, &pline2, 10);
+        trim(pline2);
+        num4 = strtol(pline2, &pline1, 10);
+        cout << "HEllo" << endl;
+        if( (num2 > 1 || num2 < 0) || (num4 > 1 || num4 < 0) ){
+            fprintf(stderr, "Error in readin Topology exclusions, patch ID must me 0 or 1\n New [EXCLUDE] formate at each line particle1ID patch1ID[0or1] particle2ID patchID[0or1]\n\n");
+            return 0;
+        }else{
+            exlusions[num1][num2][num3][num4]=true;
+            exlusions[num3][num4][num1][num2]=true;
+        }
     } else {
         fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
         return 0;
     }
-    while ((int)strlen(pline1) > 0) {
-        num1 = strtol(pline1, &pline2, 10);
-        trim(pline2);
-        if ((int)strlen(pline2) > 0) {
-            num2 = strtol(pline2, &pline1, 10);
-            trim(pline1);
-            exlusions[num1][num2]=true;
-            exlusions[num2][num1]=true;
-        } else {
-            fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
-            return 0;
-        }
-    }
+
+//    while ((int)strlen(pline1) > 0) {
+//        num1 = strtol(pline1, &pline2, 10);
+//        trim(pline2);
+//        if ((int)strlen(pline2) > 0) {
+//            num2 = strtol(pline2, &pline1, 10);
+//            trim(pline1);
+//            exlusions[num1][num2]=true;
+//            exlusions[num2][num1]=true;
+//        } else {
+//            fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
+//            return 0;
+//        }
+//    }
+
     return 1;
 }
 
