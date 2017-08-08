@@ -367,27 +367,45 @@ private:
         }
 
         //TEMPERATURE READING/ASSIGN
-        FILE *temperFile;
-        if (files->exterTemperatures){
+        if (mpirank == 0){                                                          //reading and asigment of temperatures is done only in root process
+            FILE *temperFile;
             temperFile = fopen(files->temperatures, "r");
-            printf("File with temperatures was found and used to asigne temperatures to replicas.\n");
-            for(int i=0; i<mpinprocs; i++) {
-                if(fscanf(temperFile, "%lf\n", &temper) != EOF){
-                    pTemp.push_back( temper );
-                } else {
-                    printf("ERROR: Not enough temperatures supplid in temperature file!\n\n");
-                    exit(1);
+            if ( temperFile != nullptr){                                            // if temperatures file is present temperatures are take from that file
+                printf("File with temperatures was found and used to asigne temperatures to replicas.\n");
+                for(int i = 0; i < mpinprocs; i++) {
+                    if(fscanf(temperFile, "%lf\n", &temper) != EOF){
+                        pTemp.push_back( temper );
+                    } else {
+                        printf("ERROR: Not enough temperatures supplid in temperature file!\n\n");
+                        exit(1);
+                    }
+                }
+            }else{                                                                  // no temperature file has been found so that we asigne temperatures in interval [temper; paraltemper] in constant beta (1/kT) where k is taken to be 1.0
+                temperFile = fopen(files->temperatures, "w");                       // asigned temperatures are also writen
+                dtemp = ((1.0 / temper) - ( 1.0 / paraltemper )) / (mpinprocs - 1);
+
+                for(int i = 0; i < mpinprocs; i++) {
+                    pTemp.push_back( temper / (1.0 - i * temper * dtemp) );
+                    fprintf(temperFile, "%f\n", temper/(1.0 - i * temper * dtemp));
                 }
             }
-        } else {
-            temperFile = fopen(files->temperatures, "w");
-            dtemp = ((1.0/temper)-(1.0/paraltemper))/(mpinprocs-1);
-            for(int i=0; i<mpinprocs; i++) {
-                pTemp.push_back( temper/(1.0-i*temper*dtemp) );
-                fprintf(temperFile, "%f\n", temper/(1.0-i*temper*dtemp));
-            }
-            temper =  temper/(1.0-mpirank*temper*dtemp);
+            fclose(temperFile);
+                                                                                    // Now temperatures are asigned for root process so that pTemp have to be distributed to other processes
+        }else{
+            pTemp.resize(mpinprocs);                                                // rescaling for non root processes to enable copy from root in MPI_Bcast(...)
         }
+
+        MPI_Bcast(&pTemp[0], pTemp.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);          //distribute pTemp vector over all processes from root
+
+        temper = pTemp[mpirank];                                                    // asigne temperature for local process
+
+/*
+        cout << "rank: " << mpirank << endl;
+        for (std::vector<double>::iterator it = pTemp.begin(); it != pTemp.end(); ++it){
+            cout << "data: " << *it << endl;
+        }
+        cout << "\n\n\n" << endl;
+*/
 
         if ( (press != paralpress) && (mpinprocs <2) ) {
             printf("ERROR: Pressure replica exchange at single core does not work.\n\n");
