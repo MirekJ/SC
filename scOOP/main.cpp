@@ -26,6 +26,30 @@ Topo topo; // Global instance of topology
   #endif
 #endif
 
+#ifdef MPI_DEBUG_HOLD
+/*
+ *  simple function that could be put in parts of code where you want to stop and synchronize MPI processes
+ * so that GDB can be attached to program and MPI can be debugged
+ * adapted from
+ * "http://www.sci.utah.edu/~tfogal/academic/Fogal-ParallelDebugging.pdf"
+ *
+ * Enable by inserting in code and passing mpirank to it
+ * Then compile code with MPI_DEBUG_HOLD.
+ * Run the code: ./SC &
+ * Attach gdb: gdb -ex "attach pid_from_program"
+ * Set variable i=1: set variable i=1
+ * Have fun debuging
+*/
+static void wait_for_debugger(int rank){
+    if(rank == 0) {
+        volatile  int i=0;
+        fprintf(stderr , "pid %ld  waiting  for  debugger\n", (long)getpid ());
+        while(i==0) { /*  change  ’i’ in the  debugger  */ }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+}
+#endif
+
 int main(int argc, char** argv) {
     int rank=0, procs=1;
 
