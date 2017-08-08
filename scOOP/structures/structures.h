@@ -87,7 +87,6 @@ public:
         sprintf(configurationoutfile, "config.last");
         sprintf(optionsfile, "options");
         sprintf(temperatures, "temperatures");
-        exterTemperatures = false;
         sprintf(topologyInFile, "top.init");
         sprintf(topologyOutFile, "top.last");
         sprintf(moviefile, "movie");
@@ -100,11 +99,6 @@ public:
 
 #ifdef ENABLE_MPI
         initMPI(rank);
-        FILE *test;
-        if(fopen(temperatures, "r")){
-            exterTemperatures = true;
-            fclose(test);
-        }
 #endif
 
     }
@@ -116,7 +110,6 @@ public:
     char topologyInFile[30];
     char optionsfile[30];
     char temperatures[30];
-    bool exterTemperatures;
     char wlinfile[30];
     // output files
     char configurationoutfile[30];
