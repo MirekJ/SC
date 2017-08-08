@@ -18,7 +18,7 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                         ia_params[i][j].geotype[k] = ia_params[a[k]][a[k]].geotype[0];
                         ia_params[i][j].len[k]     = ia_params[a[k]][a[k]].len[0];
                         if (ia_params[a[k]][a[k]].len[0] > 0){
-
+/*
                             if (length == 0){
                                 length = ia_params[a[k]][a[k]].len[0];
                             } else {
@@ -31,6 +31,7 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                                     }
                                 }
                             }
+*/
                         }
                         ia_params[i][j].half_len[k] = ia_params[a[k]][a[k]].half_len[0];
                         /* Handle angles only, when geotype is a patchs sphero cylinder */
