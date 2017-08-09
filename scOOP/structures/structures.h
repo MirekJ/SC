@@ -218,7 +218,7 @@ public:
     double half_len[2];         ///< \brief Half length of the PSC
     double chiral_cos[2];       ///< \brief Coctains the cosinus for the chiral rotation of the patch
     double chiral_sin[2];       ///< \brief Contains the sinus for the chiral rotation of the patch
-    double parallel;            ///< \brief additional epsilon directional interactions parallel(>0), isotpropic(0), or antiparallel(<0)
+    double parallel[4];         ///< \brief additional epsilon directional interactions parallel(>0), isotpropic(0), or antiparallel(<0), [patch1..patch1_eps_parallel, patch1..patch2_eps_parallel, patch2..patch1_eps_parallel, patch2..patch2_eps_parallel]
 
     bool exclude;
     bool exclude_p1_p1;
@@ -243,6 +243,7 @@ public:
             pcanglsw[k] = 0.0;
             pcoshalfi[k] = 0.0;
             psinhalfi[k] = 0.0;
+            parallel[k] = 0.0;
         }
         sigma = 0.0;
         epsilon = 0.0;
@@ -252,7 +253,6 @@ public:
         rcut = 0.0;
         volume = 0.0;
         pvolscale = 0.0;
-        parallel = 0.0;
 
         exclude = false;
         exclude_p1_p1 = false;

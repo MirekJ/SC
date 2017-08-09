@@ -300,9 +300,8 @@ double EPatch<EPotential>::atrE(const Ia_param &iaParam, const Vector &p1Dir, co
     // 7 - add scaling increased if particles are parallel or antiparallel
     //
     paral = 1.0;
-    if( iaParam.parallel != 0.0)
-        paral = scparallel(iaParam.parallel, p1Dir, p2Dir);
-
+    if( iaParam.parallel[patchnum1 + 2*patchnum2] != 0.0)
+        paral = scparallel(iaParam.parallel[patchnum1 + 2*patchnum2], p1Dir, p2Dir);
     //7- put it all together, CPSC + PSC -> dont have PARAL E
     atrenergy *= f0 * f1 * f2 * paral;
 
