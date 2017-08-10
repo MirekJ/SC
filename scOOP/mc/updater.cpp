@@ -156,7 +156,7 @@ void Updater::simulate(long nsweeps, long adjust, long paramfrq, long report) {
             }
         }
         //____________Cluster Move____________
-        if(sim->nClustMove != 0 && sweep%sim->nClustMove == 0) {
+        for(int i = 0; i < sim->nClustMove; i++){
             edriftchanges += move.clusterMove();
 
             if(sim->pairlist_update) {
