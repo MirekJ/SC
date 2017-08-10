@@ -752,6 +752,12 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
         return 1;
     }
 
+    if (!strcmp(molcommand,"RIGID")) {
+        moleculeParam[i].rigid = true;
+        fprintf (stdout, "rigid: true \n");
+        return 1;
+    }
+
     // INIT of muVT ensemble
     if (!strcmp(molcommand,"ACTIVITY")) {
         fields = sscanf(molparams, "%le ", &activity);

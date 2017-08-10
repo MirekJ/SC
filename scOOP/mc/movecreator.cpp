@@ -14,6 +14,9 @@ double MoveCreator::particleMove() {
 
     /*=== This is a particle move step ===*/
     target = ran2() * (long)conf->pvec.size();
+    // if particle is part of rigid chain no move ... better would be to be able to directly select from particles that are free to single particles moves
+    if (topo.moleculeParam[conf->pvec[target].molType].rigid)
+        return edriftchanges;
 
     if ( !( ((wl.wlm[0] == 3) || (wl.wlm[1] == 3) ) && (target == 0) ) && \
          ((ran2() < 0.5) || (topo.ia_params[conf->pvec[target].type][conf->pvec[target].type].geotype[0] >= SP)) ) { // no rotation for spheres

@@ -1174,6 +1174,12 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
         return 1;
     }
 
+    if (!strcmp(molcommand,"RIGID")) {
+        topo.moleculeParam[i].rigid = true;
+        fprintf (stdout, "rigid: true \n");
+        return 1;
+    }
+
     if( ( topo.moleculeParam[i].bond1c > 0.0 && topo.moleculeParam[i].bonddc > 0.0 )
             || ( topo.moleculeParam[i].bondhc > 0.0 && topo.moleculeParam[i].bonddc > 0.0 )
             || ( topo.moleculeParam[i].bond1c > 0.0 && topo.moleculeParam[i].bondhc > 0.0 ) ) {
