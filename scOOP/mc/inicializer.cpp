@@ -1,6 +1,7 @@
 #include "inicializer.h"
 
 #include <iostream>
+#include <iomanip>
 
 #include "simlib.h"
 #include "mygetline.h"
@@ -51,7 +52,27 @@ void Inicializer::initTop() {
 
 #ifdef ENABLE_MPI  // Parallel tempering check
     // probability to switch replicas = exp ( -0.5 * dT*dT * N / (1 + dT) )
-    printf("Probability to switch replicas is roughly: %f\n",exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) );
+    //printf("Probability to switch replicas is roughly: %f\n",exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) );
+    if (sim->mpirank == 0){
+        std::stringstream out;
+        out << "Expected probablity transition matrxi in temperature space: " << endl;
+        double T_ratio; // frac{T_j}{T_i}
+        double Cv = (3/2)*8.3144598; // C_v=\frac{3}{2}R  ... molar heat capacity at constant volume for monoatomic ideal gass
+
+        for (unsigned int i = 0; i < sim->pTemp.size(); i++) {
+            for (unsigned int j = 0; j < sim->pTemp.size(); j++){
+                if ( i <= j){ // print prob
+                    T_ratio = sim->pTemp[i]/sim->pTemp[j];
+                    out << scientific << setprecision(6) << erfc( (1-T_ratio) * sqrt( (0.5*Cv)/(1+T_ratio*T_ratio) )  ) << " ";    // (See Kofke D. A. Kofke, J. Chem. Phys. , 2002, 117, 6911. or Earl, David J., and Michael W. Deem. "Parallel tempering: Theory, applications, and new perspectives." Physical Chemistry Chemical Physics 7.23 (2005): 3910-3916.)
+                                                                                                                                    // Expresion assumme constat heat capacity at constant volume (do not work at phase transitions!)
+                } else { // print filler
+                    out << "             ";
+                }
+            }
+            out << endl;
+        }
+        cout << out.str();
+    }
 #endif
 
     topDealoc();

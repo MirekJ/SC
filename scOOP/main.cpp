@@ -309,7 +309,7 @@ int main(int argc, char** argv) {
     sim.all = clock() - sim.all;
 
 #ifdef ENABLE_MPI
-    cout << sim.pseudoRank << "p, MPI replica changeT / changeP / acceptance ratio: " << sim.stat.mpiexch.mx << ", " << sim.stat.mpiexch.angle << ", " << sim.stat.mpiexch.ratio() << endl;
+    cout << sim.pseudoRank << "p(T: " << sim.temper <<" ), MPI replica changeT / changeP / acceptance ratio: " << sim.stat.mpiexch.mx << ", " << sim.stat.mpiexch.angle << ", " << sim.stat.mpiexch.ratio() << endl;
     //cout << sim.pseudoRank << "p, rej: " << sim.mpiexch.rej << ", acc: " << sim.mpiexch.acc << endl;
 #endif
 
