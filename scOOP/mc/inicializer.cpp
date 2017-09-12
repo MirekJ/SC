@@ -1,6 +1,7 @@
 #include "inicializer.h"
 
 #include <iostream>
+#include <iomanip>
 
 #include "simlib.h"
 #include "mygetline.h"
@@ -15,7 +16,7 @@ extern Topo topo;
 
 void Inicializer::initTop() {
 
-    bool exclusions[MAXT][MAXT] = {false};
+    bool exclusions[MAXT][2][MAXT][2] = {false};
 
     readTopoFile(exclusions); // EXCLUDE LOADED CORRECTLY 7.8. 2015
 
@@ -51,7 +52,27 @@ void Inicializer::initTop() {
 
 #ifdef ENABLE_MPI  // Parallel tempering check
     // probability to switch replicas = exp ( -0.5 * dT*dT * N / (1 + dT) )
-    printf("Probability to switch replicas is roughly: %f\n",exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) );
+    //printf("Probability to switch replicas is roughly: %f\n",exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) );
+    if (sim->mpirank == 0){
+        std::stringstream out;
+        out << "Expected probablity transition matrxi in temperature space: " << endl;
+        double T_ratio; // frac{T_j}{T_i}
+        double Cv = (3/2)*8.3144598; // C_v=\frac{3}{2}R  ... molar heat capacity at constant volume for monoatomic ideal gass
+
+        for (unsigned int i = 0; i < sim->pTemp.size(); i++) {
+            for (unsigned int j = 0; j < sim->pTemp.size(); j++){
+                if ( i <= j){ // print prob
+                    T_ratio = sim->pTemp[i]/sim->pTemp[j];
+                    out << scientific << setprecision(6) << erfc( (1-T_ratio) * sqrt( (0.5*Cv)/(1+T_ratio*T_ratio) )  ) << " ";    // (See Kofke D. A. Kofke, J. Chem. Phys. , 2002, 117, 6911. or Earl, David J., and Michael W. Deem. "Parallel tempering: Theory, applications, and new perspectives." Physical Chemistry Chemical Physics 7.23 (2005): 3910-3916.)
+                                                                                                                                    // Expresion assumme constat heat capacity at constant volume (do not work at phase transitions!)
+                } else { // print filler
+                    out << "             ";
+                }
+            }
+            out << endl;
+        }
+        cout << out.str();
+    }
 #endif
 
     topDealoc();
@@ -146,15 +167,12 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
 #endif
     if (conf->geo.box.x < maxlength * 2.0 + 2.0) {
         printf ("WARNING: x (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.x, maxlength * 2.0 + 2.0);
-        exit(1);
     }
     if (conf->geo.box.y < maxlength * 2.0 + 2.0) {
         printf ("WARNING: y (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.y, maxlength * 2.0 + 2.0);
-        exit(1);
     }
     if (conf->geo.box.z < maxlength * 2.0 + 2.0) {
         printf ("WARNING: z (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.z, maxlength * 2.0 + 2.0);
-        exit(1);
     }
 
     DEBUG_INIT("Position of the particle");
@@ -455,7 +473,7 @@ void Inicializer::setParticlesParamss(MolIO* molecules, long *sysmoln, char **sy
 }
 
 
-void Inicializer::readTopoFile(bool exclusions[][MAXT]) {
+void Inicializer::readTopoFile(bool exclusions[MAXT][2][MAXT][2]) {
     char *dummy=NULL;
     char line[STRLEN], keystr[STRLEN], molname[STRLEN];
     unsigned size;
@@ -603,8 +621,8 @@ void *Inicializer::xMalloc(size_t num) {
 }
 
 
-int Inicializer::fillExclusions(char **pline, bool exlusions[][MAXT]) {
-    long num1,num2;
+int Inicializer::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
+    long num1,num2,num3,num4; //ok so to be able to distinguish between patches we load [EXCLUDE] in format : particle1ID patch1ID[0or1] particle2ID patchID[0or1]
     char *pline1, *pline2;
 
     num1 = strtol(*pline, &pline2, 10);
@@ -612,25 +630,34 @@ int Inicializer::fillExclusions(char **pline, bool exlusions[][MAXT]) {
     if ((int)strlen(pline2) > 0) {
         num2 = strtol(pline2, &pline1, 10);
         trim(pline1);
-        exlusions[num1][num2]=true;
-        exlusions[num2][num1]=true;
+        num3 = strtol(pline1, &pline2, 10);
+        trim(pline2);
+        num4 = strtol(pline2, &pline1, 10);
+        if( (num2 > 1 || num2 < 0) || (num4 > 1 || num4 < 0) ){
+            fprintf(stderr, " \e[91m\e[1mError\e[21m\e[97m in readin Topology exclusions, patch ID must me 0 or 1\n New [EXCLUDE] formate at each line particle1ID patch1ID[0or1] particle2ID patchID[0or1]\n\n");
+            return 0;
+        }else{
+            exlusions[num1][num2][num3][num4]=true;
+            exlusions[num3][num4][num1][num2]=true;
+        }
     } else {
         fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
         return 0;
     }
-    while ((int)strlen(pline1) > 0) {
-      num1 = strtol(pline1, &pline2, 10);
-      trim(pline2);
-      if ((int)strlen(pline2) > 0) {
-        num2 = strtol(pline2, &pline1, 10);
-        trim(pline1);
-        exlusions[num1][num2]=true;
-        exlusions[num2][num1]=true;
-      } else {
-        fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
-        return 0;
-      }
-    }
+
+//    while ((int)strlen(pline1) > 0) {
+//        num1 = strtol(pline1, &pline2, 10);
+//        trim(pline2);
+//        if ((int)strlen(pline2) > 0) {
+//            num2 = strtol(pline2, &pline1, 10);
+//            trim(pline1);
+//            exlusions[num1][num2]=true;
+//            exlusions[num2][num1]=true;
+//        } else {
+//            fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
+//            return 0;
+//        }
+//    }
     return 1;
 }
 
@@ -665,84 +692,100 @@ int Inicializer::fillSystem(char *pline, char *sysnames[], long **sysmoln, char*
 
 
 int Inicializer::fillTypes(char **pline) {
-    int type;
-    int geotype_i;
-    int fields;
-    char name[SMSTR];
-    char geotype[SMSTR];
+    int     type,
+            geotype_i,
+            fields;
 
-    double param[12];
-    /* 0: epsilon
-     * 1: sigma
-     * 2: attraction dist
-     * 3: sttraction switch
-     * 4: patch angle
-     * 5: patch switch
-     * 6: length
-     * 7: parallel_eps
-     * 8(optional): second patche rotation
-     * 9(optional): second patch angle
-     * 10(optional): second patch angle switch
-     * +1: chirality
-     */
-    char typestr[STRLEN], paramstr[STRLEN];
+    char    name[SMSTR],
+            geotype[SMSTR],
+            typestr[STRLEN],
+            paramstr[STRLEN];
 
-    beforecommand(typestr, *pline, SEPARATOR);
-    aftercommand(paramstr, *pline, SEPARATOR);
+    double  param[13];
+        /* 0: epsilon
+         * 1: sigma
+         * 2: attraction dist
+         * 3: sttraction switch
+         * 4: patch angle
+         * 5: patch switch
+         * 6: length
+         * 7: parallel_eps
+         * 8(optional): second patche rotation
+         * 9(optional): second patch angle
+         * 10(optional): second patch angle switch
+         * 11(optional): second patch parallel_eps
+         * +1: chirality
+         */
 
-    fields = sscanf(paramstr, "%s %d %s %le %le %le %le %le %le %le %le %le %le %le %le",
-                    name, &type, geotype, &param[0], &param[1], &param[2], &param[3], &param[4],
-                    &param[5], &param[6], &param[7], &param[8], &param[9], &param[10], &param[11]);
+    beforecommand( typestr,  *pline, SEPARATOR);
+    aftercommand(  paramstr, *pline, SEPARATOR);
 
-    cout << "Fields:" << fields << " " << param[11] << endl;
+    fields = sscanf(paramstr, "%s %d %s %le %le %le %le %le %le %le %le %le %le %le %le %le",
+                    name, &type, geotype,
+                    &param[0],  /*epsilon                               */
+                    &param[1],  /*sigma                                 */
+                    &param[2],  /*attraction dist                       */
+                    &param[3],  /*sttraction switch                     */
+                    &param[4],  /*patch angle                           */
+                    &param[5],  /*patch switch                          */
+                    &param[6],  /*length                                */
+                    &param[7],  /*parallel_eps                          */
+                    &param[8],  /*second patche rotation or chirality   */
+                    &param[9],  /*second patch angle                    */
+                    &param[10], /*second patch angle switch             */
+                    &param[11], /*second patch parallel_eps             */
+                    &param[12]  /*chirality                             */
+                    );
 
-    fields -= 5; // number of parameter fields => I am too lazy to adjust everywhere below the numbers
+    cout << "Fields:" << fields << endl;
+
     //DEBUG    fprintf (stdout, "Topology read geotype: %ld with parameters fields %d, str:%s and %s in pline %s\n",geotype,fields,geotypestr,paramstr,pline);
 
     geotype_i = convertGeotype(geotype);
-    if(!geotype_i){
+    if( !geotype_i ){
         fprintf(stderr, "TOPOLOGY ERROR: Unknown GEOTYPE: %s!", geotype);
         return 0;
     }
+
     DEBUG_INIT("geotype_i: %d; fields = %d", geotype_i, fields);
-    if (( (geotype_i == SPN) ) && (fields != 0)) {
+    if (( (geotype_i == SPN) ) && (fields != 5)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA" << endl;
         return 0;
     }
-    if (( (geotype_i == SCN) ) && (fields != 1)) {
+    if (( (geotype_i == SCN) ) && (fields != 6)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA SC_LENGTH" << endl;
         return 0;
     }
-    if (( (geotype_i == SPA)) && (fields != 2)) {
+    if (( (geotype_i == SPA)) && (fields != 7)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH" << endl;
         return 0;
     }
-    if (( (geotype_i == SCA) ) && (fields != 3)) {
+    if (( (geotype_i == SCA) ) && (fields != 8)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH SC_LENGTH" << endl;
         return 0;
     }
-    if (( (geotype_i == PSC) || (geotype_i == CPSC) ) && (fields != 6)) {
+    if (( (geotype_i == PSC) || (geotype_i == CPSC) ) && (fields != 11)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS" << endl;
         return 0;
     }
-    if (( (geotype_i == CHPSC) || (geotype_i == CHCPSC) )&& ( fields != 7)) {
+    if (( (geotype_i == CHPSC) || (geotype_i == CHCPSC) )&& ( fields != 12)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS CHIRAL_ANGLE" << endl;
         return 0;
     }
-    if (( (geotype_i == TPSC) || (geotype_i == TCPSC) ) && (fields != 9)) {
+    if (( (geotype_i == TPSC) || (geotype_i == TCPSC) ) && (fields != 15)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
-        cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH" << endl;
+        cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH PARALLEL_EPS" << endl;
         return 0;
     }
-    if (( (geotype_i == TCHPSC) || (geotype_i == TCHCPSC) )&& ( fields != 10)) {
+    if (( (geotype_i == TCHPSC) || (geotype_i == TCHCPSC) )&& ( fields != 16)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
-        cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH CHIRAL_ANGLE" << endl;
+        cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH PARALLEL_EPS CHIRAL_ANGLE" << endl;
         return 0;
     }
 
@@ -751,92 +794,141 @@ int Inicializer::fillTypes(char **pline) {
         return 0;
     }
 
-    strcpy(topo.ia_params[type][type].name, name);
-    strcpy(topo.ia_params[type][type].other_name, name);
-    topo.ia_params[type][type].geotype[0] = geotype_i;
-    topo.ia_params[type][type].geotype[1] = geotype_i;
-    topo.ia_params[type][type].epsilon = param[0];
-    topo.ia_params[type][type].sigma = param[1];
-    topo.ia_params[type][type].sigmaSq   = topo.ia_params[type][type].sigma * topo.ia_params[type][type].sigma;
-    topo.ia_params[type][type].A = 4 * topo.ia_params[type][type].epsilon * pow(topo.ia_params[type][type].sigma, 12 );
-    topo.ia_params[type][type].B = 4 * topo.ia_params[type][type].epsilon * pow(topo.ia_params[type][type].sigma, 6 );
-    topo.ia_params[type][type].rcutwca = (topo.ia_params[type][type].sigma)*pow(2.0,1.0/6.0);
-    topo.ia_params[type][type].rcutwcaSq = topo.ia_params[type][type].rcutwca * topo.ia_params[type][type].rcutwca;
+    strcpy(topo.ia_params[type][type].name       , name);
+    strcpy(topo.ia_params[type][type].other_name , name);
+
+    topo.ia_params[type][type].geotype[0]                = geotype_i;
+    topo.ia_params[type][type].geotype[1]                = geotype_i;
+
+    topo.ia_params[type][type].epsilon                   = param[0];
+    topo.ia_params[type][type].sigma                     = param[1];
+    topo.ia_params[type][type].sigmaSq                   = topo.ia_params[type][type].sigma * topo.ia_params[type][type].sigma;
+    topo.ia_params[type][type].A                         = 4 * topo.ia_params[type][type].epsilon * pow(topo.ia_params[type][type].sigma, 12 );
+    topo.ia_params[type][type].B                         = 4 * topo.ia_params[type][type].epsilon * pow(topo.ia_params[type][type].sigma, 6 );
+
+    topo.ia_params[type][type].rcutwca                   = (topo.ia_params[type][type].sigma)*pow(2.0,1.0/6.0);
+    topo.ia_params[type][type].rcutwcaSq                 = topo.ia_params[type][type].rcutwca * topo.ia_params[type][type].rcutwca;
 
     fprintf(stdout, "Topology read of %d: %8s (geotype: %s, %d) with parameters %g %g", type, name, geotype, geotype_i, topo.ia_params[type][type].epsilon, topo.ia_params[type][type].sigma);
 
-    if (fields > 0 && fields != 1 && fields != 3) { // all except SCN and SCA
-        topo.ia_params[type][type].pdis = param[2];
-        topo.ia_params[type][type].pdisSq = topo.ia_params[type][type].pdis * topo.ia_params[type][type].pdis;
-        topo.ia_params[type][type].pswitch = param[3];
-        topo.ia_params[type][type].pswitchINV = 1.0/param[3];
-        topo.ia_params[type][type].rcut = topo.ia_params[type][type].pswitch+topo.ia_params[type][type].pdis;
-        topo.ia_params[type][type].rcutSq = topo.ia_params[type][type].rcut * topo.ia_params[type][type].rcut;
+    if (
+            geotype_i == SCN
+        ){
+
+        for (int i = 0; i < 2; i++){
+            topo.ia_params[type][type].len[i]            = param[2];
+            topo.ia_params[type][type].half_len[i]       = param[2] * 0.5;
+        }
+        fprintf(stdout, " | %g",topo.ia_params[type][type].len[0]);
+    }
+
+    if (
+            geotype_i != SPN ||
+            geotype_i != SCN
+        ){
+
+        topo.ia_params[type][type].pdis                  = param[2];
+        topo.ia_params[type][type].pdisSq                = topo.ia_params[type][type].pdis  * topo.ia_params[type][type].pdis;
+
+        topo.ia_params[type][type].pswitch               = param[3];
+        topo.ia_params[type][type].pswitchINV            = 1.0/param[3];
+        topo.ia_params[type][type].rcut                  = topo.ia_params[type][type].pswitch+topo.ia_params[type][type].pdis;
+        topo.ia_params[type][type].rcutSq                = topo.ia_params[type][type].rcut * topo.ia_params[type][type].rcut;
+
         fprintf(stdout, " | %g %g",topo.ia_params[type][type].pdis,topo.ia_params[type][type].pswitch);
     }
-    if(fields == 1) { // SCN
-        for(int i = 0; i < 2; i++){
-            topo.ia_params[type][type].len[i] = param[2];
-            topo.ia_params[type][type].half_len[i] = param[2] / 2;
+
+    if (
+            geotype_i == SCA
+        ){
+
+        for (int i = 0; i < 2; i++){
+            topo.ia_params[type][type].len[i]            = param[4];
+            topo.ia_params[type][type].half_len[i]       = param[4] / 2;
         }
+        fprintf(stdout, " | %g",topo.ia_params[type][type].len[0]);
     }
-    if(fields == 3) { // SCA
-        for(int i = 0; i < 2; i++){
-            topo.ia_params[type][type].len[i] = param[4];
-            topo.ia_params[type][type].half_len[i] = param[4] / 2;
+
+    if (
+            geotype_i == PSC        ||
+            geotype_i == CPSC       ||
+            geotype_i == CHPSC      ||
+            geotype_i == CHCPSC     ||
+            geotype_i == TPSC       ||
+            geotype_i == TCPSC      ||
+            geotype_i == TCHPSC     ||
+            geotype_i == TCHCPSC
+        ) {
+
+        for (int i = 0; i < 2; i++){
+            topo.ia_params[type][type].len[i]            = param[6];
+            topo.ia_params[type][type].half_len[i]       = param[6] / 2;
+            topo.ia_params[type][type].pangl[i]          = param[4];
+            topo.ia_params[type][type].panglsw[i]        = param[5];
+            topo.ia_params[type][type].pcangl[i]         = cos(param[4]/2.0/180*PI);                 // C1
+            topo.ia_params[type][type].pcanglsw[i]       = cos((param[4]/2.0+param[5])/180*PI);      // C2
+            topo.ia_params[type][type].pcoshalfi[i]      = cos((param[4]/2.0+param[5])/2.0/180*PI);
+            topo.ia_params[type][type].psinhalfi[i]      = sqrt(1.0 - topo.ia_params[type][type].pcoshalfi[i] * topo.ia_params[type][type].pcoshalfi[i]);
+            topo.ia_params[type][type].parallel[0]       = param[7];
         }
+        fprintf(stdout, " | %g %g | %g", topo.ia_params[type][type].pangl[0], topo.ia_params[type][type].panglsw[0], topo.ia_params[type][type].parallel[0]);
     }
-    if (fields > 2 && fields != 3) { // except SCA
-        int i;
-        for(i = 0; i < 2; i++){
-            topo.ia_params[type][type].len[i] = param[6];
-            topo.ia_params[type][type].half_len[i] = param[6] / 2;
-            topo.ia_params[type][type].pangl[i] = param[4];
-            topo.ia_params[type][type].panglsw[i] = param[5];
-            topo.ia_params[type][type].pcangl[i] = cos(param[4]/2.0/180*PI);                 // C1
-            topo.ia_params[type][type].pcanglsw[i] = cos((param[4]/2.0+param[5])/180*PI);    // C2
-            //topo.ia_params[type][type].pcangl[i] = topo.ia_params[type][type].pcangl[i];
-            //topo.ia_params[type][type].pcanglsw[i] =	topo.ia_params[type][type].pcanglsw[i];
-            topo.ia_params[type][type].pcoshalfi[i] = cos((param[4]/2.0+param[5])/2.0/180*PI);
-            topo.ia_params[type][type].psinhalfi[i] = sqrt(1.0 - topo.ia_params[type][type].pcoshalfi[i] * topo.ia_params[type][type].pcoshalfi[i]);
-            topo.ia_params[type][type].parallel = param[7];
-	  
-	}
-        fprintf(stdout, " | %g %g | %g", topo.ia_params[type][type].pangl[0], topo.ia_params[type][type].panglsw[0], topo.ia_params[type][type].parallel);
-    }
-    if(fields == 7){
-        int i;
-        for(i = 0; i < 2; i++){
-            topo.ia_params[type][type].chiral_cos[i] = cos(param[8] / 360 * PI);
-            topo.ia_params[type][type].chiral_sin[i] = sqrt(1 - topo.ia_params[type][type].chiral_cos[i] * topo.ia_params[type][type].chiral_cos[i]);
+
+    if(
+            geotype_i == CHPSC ||
+            geotype_i == CHCPSC
+       ){
+
+        for (int i = 0; i < 2; i++){
+            topo.ia_params[type][type].chiral_cos[i]     = cos(param[8] / 360 * PI);
+            topo.ia_params[type][type].chiral_sin[i]     = sqrt(1 - topo.ia_params[type][type].chiral_cos[i] * topo.ia_params[type][type].chiral_cos[i]);
             fprintf(stdout, "| chirality %g ", param[8]);
         }
     }
-    if ((fields == 9)||(fields == 10)) {
-        int i;
-        for(i = 0; i < 2; i++){
-            topo.ia_params[type][type].csecpatchrot[i] = cos(param[8] / 360 * PI);
-            topo.ia_params[type][type].ssecpatchrot[i] = sqrt(1 - topo.ia_params[type][type].csecpatchrot[i] * topo.ia_params[type][type].csecpatchrot[i]);
-            //fprintf(stdout, " | %g %g", topo.ia_params[type][type].csecpatchrot[0], topo.ia_params[type][type].ssecpatchrot[0]);
 
-            topo.ia_params[type][type].pangl[i+2] = param[9];
-            topo.ia_params[type][type].panglsw[i+2] = param[10];
-            topo.ia_params[type][type].pcangl[i+2] = cos(param[9]/2.0/180*PI);                 // C1
-            topo.ia_params[type][type].pcanglsw[i+2] = cos((param[9]/2.0+param[10])/180*PI);    // C2
-            //topo.ia_params[type][type].pcangl[i] = topo.ia_params[type][type].pcangl[i];
-            //topo.ia_params[type][type].pcanglsw[i] = topo.ia_params[type][type].pcanglsw[i];
-            topo.ia_params[type][type].pcoshalfi[i+2] = cos((param[9]/2.0+param[10])/2.0/180*PI);
-            topo.ia_params[type][type].psinhalfi[i+2] = sqrt(1.0 - topo.ia_params[type][type].pcoshalfi[i+2] * topo.ia_params[type][type].pcoshalfi[i+2]);
+    if (
+            geotype_i == TPSC       ||
+            geotype_i == TCPSC      ||
+            geotype_i == TCHPSC     ||
+            geotype_i == TCHCPSC
+        ) {
+
+        for (int i = 0; i < 2; i++){
+            topo.ia_params[type][type].csecpatchrot[i]   = cos(param[8] / 360 * PI);
+            topo.ia_params[type][type].ssecpatchrot[i]   = sqrt(1 - topo.ia_params[type][type].csecpatchrot[i] * topo.ia_params[type][type].csecpatchrot[i]);
+            //fprintf(stdout, " | %g %g", ia_params[type][type].csecpatchrot[0], ia_params[type][type].ssecpatchrot[0]);
+
+            topo.ia_params[type][type].pangl[i+2]        = param[9];
+            topo.ia_params[type][type].panglsw[i+2]      = param[10];
+            topo.ia_params[type][type].pcangl[i+2]       = cos(param[9]/2.0/180*PI);                 // C1
+            topo.ia_params[type][type].pcanglsw[i+2]     = cos((param[9]/2.0+param[10])/180*PI);     // C2
+            topo.ia_params[type][type].pcoshalfi[i+2]    = cos((param[9]/2.0+param[10])/2.0/180*PI);
+            topo.ia_params[type][type].psinhalfi[i+2]    = sqrt(1.0 - topo.ia_params[type][type].pcoshalfi[i+2] * topo.ia_params[type][type].pcoshalfi[i+2]);
         }
-        fprintf(stdout, " | %g  %g %g", param[8], topo.ia_params[type][type].pangl[2], topo.ia_params[type][type].panglsw[2]);
+        if (param[7] > 0.0 && param[11] > 0.0){
+            topo.ia_params[type][type].parallel[1]       = sqrt(param[7]*param[11]);
+            topo.ia_params[type][type].parallel[2]       = sqrt(param[7]*param[11]);
+        }
+        if (param[7] < 0.0 && param[11] < 0.0){
+            topo.ia_params[type][type].parallel[1]       = -sqrt(param[7]*param[11]);
+            topo.ia_params[type][type].parallel[2]       = -sqrt(param[7]*param[11]);
+        }
+        topo.ia_params[type][type].parallel[3]           = param[11];
+
+        fprintf(stdout, " | %g  %g %g %g", param[8], topo.ia_params[type][type].pangl[2], topo.ia_params[type][type].panglsw[2], topo.ia_params[type][type].parallel[2]);
     }
-    if(fields == 10){
-        int i;
-        for(i = 0; i < 2; i++){
-            topo.ia_params[type][type].chiral_cos[i] = cos(param[11] / 360 * PI);
+
+    if (
+            geotype_i == TCHPSC ||
+            geotype_i == TCHCPSC
+        ){
+
+        for (int i = 0; i < 2; i++){
+            // Chirality data
+            topo.ia_params[type][type].chiral_cos[i] = cos(param[12] / 360 * PI);
             topo.ia_params[type][type].chiral_sin[i] = sqrt(1 - topo.ia_params[type][type].chiral_cos[i] * topo.ia_params[type][type].chiral_cos[i]);
         }
-        fprintf(stdout, " | %g ", param[11]);
+        fprintf(stdout, "| chirality %g ", param[12]);
     }
 
     // Volume
@@ -1097,6 +1189,12 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
         topo.moleculeParam[i].activity = activity;
         topo.moleculeParam[i].chemPot = log(activity*Nav*1e-24); // faunus log(activity*Nav*1e-27) [mol/l]
         fprintf (stdout, "activity: %f \n",topo.moleculeParam[i].activity);
+        return 1;
+    }
+
+    if (!strcmp(molcommand,"RIGID")) {
+        topo.moleculeParam[i].rigid = true;
+        fprintf (stdout, "rigid: true \n");
         return 1;
     }
 

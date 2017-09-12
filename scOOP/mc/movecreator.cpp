@@ -14,6 +14,9 @@ double MoveCreator::particleMove() {
 
     /*=== This is a particle move step ===*/
     target = ran2() * (long)conf->pvec.size();
+    // if particle is part of rigid chain no move ... better would be to be able to directly select from particles that are free to single particles moves
+    if (topo.moleculeParam[conf->pvec[target].molType].rigid)
+        return edriftchanges;
 
     if ( !( ((wl.wlm[0] == 3) || (wl.wlm[1] == 3) ) && (target == 0) ) && \
          ((ran2() < 0.5) || (topo.ia_params[conf->pvec[target].type][conf->pvec[target].type].geotype[0] >= SP)) ) { // no rotation for spheres
@@ -647,13 +650,13 @@ double MoveCreator::replicaExchangeMove(long sweep) {
             // P(1, exp( (1/T_here - 1/T_received) * (mu * (N_here - N_received) + (E_here - E_received)) )
             //
             reject = false;
-            double temp = (1/sim->temper - 1/(sim->temper + sim->dtemp));
+            double temp = (1/sim->temper - 1/receivedmpi.temperature); // this line assume that receivedmpi.temperature is always higher then sim->temper. This is done in way that only simulation with lower pseudoRank (lower temperature), are doing calculation (coresponds top sim->temper) and exchanges are done with next neighbour pseudorank to the right
 
             // Canonical
             change = temp * ( (localmpi.energy - receivedmpi.energy) );
 
             // ISOBARIC-ISOTERMAL
-            change += (sim->press/sim->temper - (sim->press + sim->dpress)/(sim->temper + sim->dtemp)) * (localmpi.volume - receivedmpi.volume);
+            change += (sim->press/sim->temper - (sim->press + sim->dpress)/receivedmpi.temperature) * (localmpi.volume - receivedmpi.volume);
 
             // GrandCanonical, chempot stored as mu/kT
             for(int i=0; i< conf->pvec.molTypeCount; i++) {
@@ -664,7 +667,7 @@ double MoveCreator::replicaExchangeMove(long sweep) {
             if (wl.wlm[0] > 0) {
                 localwl = wl.currorder[0]+wl.currorder[1]*wl.length[0];
                 receivedwl = receivedmpi.wl_order[0] + receivedmpi.wl_order[1]*wl.length[0];
-                change += (-wl.weights[localwl] + wl.weights[receivedwl] )/sim->temper + ( -recwlweights[receivedwl] + recwlweights[localwl])/(sim->temper + sim->dtemp) ;
+                change += (-wl.weights[localwl] + wl.weights[receivedwl] )/sim->temper + ( -recwlweights[receivedwl] + recwlweights[localwl])/receivedmpi.temperature ;
             }
 
             //

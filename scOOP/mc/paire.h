@@ -1127,20 +1127,26 @@ public:
 
         if ( ( distSq > topo.ia_params[part1->type][part2->type].rcutSq ) ||
              (topo.ia_params[part1->type][part2->type].epsilon == 0.0 ) ||
-             topo.ia_params[part1->type][part2->type].exclude ) { // cutoff or not interacting
+             topo.ia_params[part1->type][part2->type].exclude) { // cutoff or not interacting
+            atrenergy = 0.0;
+        }else if(conlist != nullptr && (conlist->conlist[0] == part2 || conlist->conlist[1] == part2)){
             atrenergy = 0.0;
         } else {
             bool firstCH, secondCH, firstT, secondT;
             patchE.getGeoTypes(topo.ia_params[part1->type][part2->type], firstCH, secondCH, firstT, secondT);
 
-            atrenergy = patchE(topo.ia_params[part1->type][part2->type],
-                    (firstCH) ? part1->chdir[0] : part1->dir,
-                    (secondCH) ? part2->chdir[0] : part2->dir,
-                    Patch(part1->patchdir[0], part1->patchsides[0], part1->patchsides[1]),
-                    Patch(part2->patchdir[0], part2->patchsides[0], part2->patchsides[1]), r_cm, 0,0);
+            if(topo.ia_params[part1->type][part2->type].exclude_p1_p1 == false){
+                atrenergy = patchE( topo.ia_params[part1->type][part2->type],
+                                    (firstCH)  ? part1->chdir[0] : part1->dir,
+                                    (secondCH) ? part2->chdir[0] : part2->dir,
+                                    Patch(part1->patchdir[0], part1->patchsides[0], part1->patchsides[1]),
+                                    Patch(part2->patchdir[0], part2->patchsides[0], part2->patchsides[1]),
+                                    r_cm,
+                                    0,0);
+            }
 
             // addition of interaction of second patches
-            if(firstT) { // part1 has second patch
+            if(firstT && (topo.ia_params[part1->type][part2->type].exclude_p2_p1 == false) ) { // part1 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[1] : part1->dir,
                         (secondCH) ? part2->chdir[0] : part2->dir,
@@ -1148,7 +1154,7 @@ public:
                     Patch(part2->patchdir[0], part2->patchsides[0], part2->patchsides[1]), r_cm, 1,0);
             }
 
-            if(secondT) { // part2 has second patch
+            if(secondT && (topo.ia_params[part1->type][part2->type].exclude_p1_p2 == false) ) { // part2 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[0] : part1->dir,
                         (secondCH) ? part2->chdir[1] : part2->dir,
@@ -1156,7 +1162,7 @@ public:
                     Patch(part2->patchdir[1], part2->patchsides[2], part2->patchsides[3]), r_cm, 0,1);
             }
 
-            if(firstT && secondT) { // part1 and part2 has second patch
+            if(firstT && secondT && (topo.ia_params[part1->type][part2->type].exclude_p2_p2 == false)) { // part1 and part2 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[1] : part1->dir,
                         (secondCH) ? part2->chdir[1] : part2->dir,

@@ -36,7 +36,6 @@ public:
     double switchprob;          ///< \brief Average number of type switch attempt per sweep
     int pairlist_update;        ///< \brief Number of sweep per updating the pairlist
     double paraltemper;         ///< \brief Temperature for parallel tempering
-    double dtemp;               ///< \brief Temprature step
     vector<double> pTemp;       ///< \brief Exact temperatures for paralel tempering
     int ptype;                  ///< \brief Type of pressure coupling
     long adjust;                ///< \brief Number of sweeps between step size adjustments
@@ -68,7 +67,7 @@ public:
     size_t all;
 
     Sim(Conf* conf, FileNames* files, int rank=0, int procs=1): press(0.0), temper(0.0), pseudoRank(rank), paralpress(0.0), dpress(0.0), shave(0.0), shprob(0.0), chainprob(0.0), switchprob(0.0), pairlist_update(0),
-        paraltemper(0.0), dtemp(0.0), ptype(0), adjust(0), movie(0), nequil(0), nsweeps(0),paramfrq(0), report(0),
+        paraltemper(0.0), ptype(0), adjust(0), movie(0), nequil(0), nsweeps(0),paramfrq(0), report(0),
         nrepchange(0), nGrandCanon(0), nClustMove(0), coneAngle(0.0), mpirank(rank), mpinprocs(procs), cell(0.0), pairList(0), /*energyCalc(0), move(0),*/ all(0) {
 
         readOptions(files);
@@ -382,15 +381,14 @@ private:
                 }
             }else{                                                                  // no temperature file has been found so that we asigne temperatures in interval [temper; paraltemper] in constant beta (1/kT) where k is taken to be 1.0
                 temperFile = fopen(files->temperatures, "w");                       // asigned temperatures are also writen
-                dtemp = ((1.0 / temper) - ( 1.0 / paraltemper )) / (mpinprocs - 1);
+                double dtemp = pow(temper/paraltemper, 1.0/(mpinprocs-1));          // it is (\frac{\beta_N}{\beta_0})^{1/N} = (\frac{T_0}{T_N})^{1/N}
 
                 for(int i = 0; i < mpinprocs; i++) {
-                    pTemp.push_back( temper / (1.0 - i * temper * dtemp) );
-                    fprintf(temperFile, "%f\n", temper/(1.0 - i * temper * dtemp));
+                    pTemp.push_back( 1/((1/temper)*pow(dtemp,i)) );
+                    fprintf(temperFile, "%f\n",  1/((1/temper)*pow(dtemp,i))  );
                 }
             }
-            fclose(temperFile);
-                                                                                    // Now temperatures are asigned for root process so that pTemp have to be distributed to other processes
+            fclose(temperFile);                                                     // Now temperatures are asigned for root process so that pTemp have to be distributed to other processes
         }else{
             pTemp.resize(mpinprocs);                                                // rescaling for non root processes to enable copy from root in MPI_Bcast(...)
         }
@@ -414,7 +412,7 @@ private:
         dpress = (paralpress - press )/(mpinprocs-1);
         press += dpress * mpirank;
         seed += mpirank;
-        stat.mpiexch.mx = dtemp;
+//        stat.mpiexch.mx = dtemp;
         stat.mpiexch.angle = dpress;
 #endif
 

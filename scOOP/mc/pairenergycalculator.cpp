@@ -608,7 +608,7 @@ double PairEnergyCalculator::eattractivePscPsc(int patchnum1, int patchnum2) { /
 
     //add scaling increased if particles are parallel or antiparallel
     paral=1.0;
-    paral = scparallel(topo.ia_params[part1->type][part2->type].parallel,part1->dir,part2->dir);
+    paral = scparallel(topo.ia_params[part1->type][part2->type].parallel[patchnum1+2*patchnum2],part1->dir,part2->dir);
     
     /*7- put it all together*/
     atrenergy *=f0*f1*f2*paral;
@@ -807,7 +807,7 @@ double PairEnergyCalculator::eattractiveCpscCpsc(int patchnum1, int patchnum2) {
 
     //add scaling increased if particles are parallel or antiparallel
     paral=1.0;
-    paral = scparallel(topo.ia_params[part1->type][part2->type].parallel,part1->dir,part2->dir);
+    paral = scparallel(topo.ia_params[part1->type][part2->type].parallel[patchnum1+2*patchnum2],part1->dir,part2->dir);
     
     /*7- put it all together*/
     atrenergy *=f0*f1*f2*paral;

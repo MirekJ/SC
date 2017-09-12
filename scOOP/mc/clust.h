@@ -146,7 +146,8 @@ private:
         for(int i = 0; i < num_cluster; i++){
             fprintf(stream, "%3d(%f):", i + 1,clustersenergy[i]);
             for(int j = 0; j < clusters[i].npart; j++){
-                fprintf(stream, "%5ld", clusters[i].particles[j] + 1);
+//                fprintf(stream, "%5ld", clusters[i].particles[j] + 1);
+                fprintf(stream, "%5ld[%i]", clusters[i].particles[j] + 1, conf->pvec[clusters[i].particles[j]].molType);
             }
             fprintf(stream, "\n");
         }

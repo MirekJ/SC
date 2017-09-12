@@ -26,7 +26,7 @@ public:
     Topo():sqmaxcut(0), maxcut(0), gcSpecies(0) {}
 
     Topo(FileNames* files) : sqmaxcut(0), maxcut(0), gcSpecies(0)  {
-        bool exclusions[MAXT][MAXT] = {false};
+        bool exclusions[MAXT][2][MAXT][2] = {false};
 
         readTopoFile(exclusions, files); // EXCLUDE LOADED CORRECTLY 7.8. 2015
     }
@@ -43,7 +43,7 @@ public:
      * @brief generate interations pairs
      * @param (*exlusions)[][]
      */
-    void genParamPairs(bool exclusions[MAXT][MAXT]);
+    void genParamPairs(bool exclusions[MAXT][2][MAXT][2]);
 
     void genTopoParams();
 
@@ -76,7 +76,7 @@ private:
     bool poolConfig;
     bool nGrandCanon;
 
-    void readTopoFile(bool exclusions[][MAXT], FileNames* files) {
+    void readTopoFile(bool exclusions[MAXT][2][MAXT][2], FileNames* files) {
         char *dummy=NULL;
         char line[STRLEN], keystr[STRLEN], molname[STRLEN];
         unsigned size;
@@ -248,7 +248,7 @@ private:
      * @param (*exlusions)[][]
      * @return
      */
-    int fillExclusions(char **pline, bool exlusions[][MAXT]);
+    int fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]);
 
 
     /**

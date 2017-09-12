@@ -117,7 +117,7 @@ private:
         setParticlesParamss(molecules, poolMolNum, poolNames, &conf->pool);
     }
 
-    void readTopoFile(bool exclusions[][MAXT]);
+    void readTopoFile(bool exclusions[MAXT][2][MAXT][2]);
 
     void setParticlesParamss(MolIO *molecules, long  *sysmoln, char **sysnames, std::vector<Particle >* pvec);
 
@@ -134,7 +134,7 @@ private:
      * @param (*exlusions)[][]
      * @return
      */
-    int fillExclusions(char **pline, bool exlusions[][MAXT]);
+    int fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]);
 
     /**
      * @brief filling the system parameters

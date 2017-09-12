@@ -31,6 +31,8 @@ public:
     double angle2eq;    ///< \brief Equilibrium angle between two spherocylinder patches -nearest neighbours
     double angle2c;     ///< \brief Spring constant for angle between two spherocylinder patches -nearest neighbours
 
+    bool rigid;         ///< \brief If true chain is always moved as whole without any moves that migh change its internal configuration
+
     double activity;                ///< \brief activity, specific to each molecule type
     double chemPot;                 ///< \brief mu + 3*ln(A), specific to each type
     std::vector<int> particleTypes;    ///< \brief 0..40 particle type
@@ -40,7 +42,7 @@ public:
 
 public:
     MoleculeParams() : name(NULL), bond1eq(-1.0), bond1c(-1.0), bond2eq(-1.0), bond2c(-1.0), bonddeq(-1), bonddc(-1.0), bondheq(-1.0), bondhc(-1.0),
-                       angle1eq(-1.0), angle1c(-1.0), angle2eq(-1.0), angle2c(-1.0), activity(-1.0), chemPot(-1.0) {
+                       angle1eq(-1.0), angle1c(-1.0), angle2eq(-1.0), angle2c(-1.0), rigid(false), activity(-1.0), chemPot(-1.0) {
         particleTypes.reserve(MAXCHL);
     }
 
