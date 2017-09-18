@@ -199,6 +199,11 @@ public:
         return pairE(&conf->pvec[part1], &conf->pvec[part2], &conlist);
     }
 
+    double p2p(int part1, int patchnum1, int part2, int patchnum2) {
+        ConList conlist = conf->pvec.getConlist(part1);
+        return pairE(&conf->pvec[part1], patchnum1, &conf->pvec[part2], patchnum2, &conlist);
+    }
+
     double p2p(Particle* part1, int part2) {
         ConList conlist = conf->pvec.getConlist(part2);
         return pairE(part1, &conf->pvec[part2], &conlist);

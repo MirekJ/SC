@@ -2,6 +2,7 @@
 
 #include "movecreator.h"
 #include <iomanip>
+#include <algorithm>
 
 #ifdef ENABLE_MPI
 # include <mpi.h>
@@ -35,13 +36,79 @@ double MoveCreator::particleMove() {
     return edriftchanges;
 }
 
+double MoveCreator::moveTetramer2D(long target){
+    /*
+     * Move to equlibrate faster 2D latice of tetramers
+     * Move:
+     * Random particle in system is selected --> all particles that are bound to that particle via first patch
+     * are included in the cluster --> rigid move of cluster (now just rotation along z axis) is performed
+     * --> if new state results in increase of size of cluster move is rejected or if MC criteria reject move
+     * I know not the most cleaver ... but one that should do the job ...
+    */
+
+    if(conf->pvec.empty())
+        return 0.0;
+
+    double energy_old = calcEnergy->allToAll(),energy_new,energy;
+    std::vector<Particle> cluster_p;
+    cluster_p.push_back(conf->pvec[target]);
+    std::vector<int> cluster_i, cluster_tmp;
+    cluster_tmp.push_back(target);
+    cluster_i.push_back(target);
+
+    unsigned int a, k=0;
+
+    while (k<cluster_i.size()){
+        for (unsigned int i = 0; i < conf->pvec.size(); i++){// chce to udelat pre neighbour list
+            energy = calcEnergy->p2p(cluster_i[k],0,i,0);
+            if(energy < 0.0 && std::find(cluster_i.begin(), cluster_i.end(), i) == cluster_i.end()){
+                cluster_p.push_back(conf->pvec[i]);
+                cluster_i.push_back(i);
+            }
+        }
+        k++;
+    }
+    MoveCreator::clusterRotateD(cluster_i, (ran2()<0.5) ? -10.0*ran2() : 10.0*ran2() , Vector(0,0,1)); // do rotation
+//    MoveCreator::clusterRotateD(cluster_i, 90.0 , Vector(0,0,1)); // do rotation
+
+    k=0;
+    while (k<cluster_tmp.size()){
+        for (unsigned int i = 0; i < conf->pvec.size(); i++){// chce to udelat pre neighbour list
+            energy = calcEnergy->p2p(cluster_tmp[k],0,i,0);
+            if(energy < 0.0 && std::find(cluster_tmp.begin(), cluster_tmp.end(), i) == cluster_tmp.end()){
+                cluster_tmp.push_back(i);
+            }
+        }
+        k++;
+    }
+    bool reject = false;
+    if (cluster_tmp.size() != cluster_i.size()){
+        reject = true; // now probagbility of backward move whould nod be same as forward move
+    }
+
+    energy_new = calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
+//    cout << "e_old: " << energy_old  << " | e_new: " << energy_new ;
+    if (reject || moveTry(energy_old,energy_new,sim->temper)){
+        a = 0;
+        for (std::vector<int>::iterator it = cluster_i.begin(); it != cluster_i.end(); ++it ){
+            conf->pvec[(*it)] = cluster_p[a];
+            a++;
+        }
+    }else{
+//        cout << "accepted" <<endl;
+        calcEnergy->eMat.swapEMatrices();
+    }
+    return calcEnergy->allToAll()-energy_old;
+}
+
 double MoveCreator::clusterMove() {
 
     double edriftchanges =0.0;
     long target;
 
     target = ran2() * (long)conf->pvec.size();// Select random particle from config
-    edriftchanges = clusterMoveGeom(target);// Call geometric cluster move
+    //edriftchanges = clusterMoveGeom(target);// Call geometric cluster move
+    edriftchanges = moveTetramer2D(target);
     return edriftchanges;
 }
 
@@ -53,6 +120,7 @@ int MoveCreator::isInCluster(double *list, int size, double value){
     }
     return 0;
 }
+
 
 double MoveCreator::clusterMoveGeom(long target) {
     /*
@@ -144,7 +212,7 @@ double MoveCreator::clusterMoveGeom(long target) {
         //Iterate through reflection "Neighbours"
         for (unsigned int i = 0; i < conf->pvec.size(); i++){
             if (!isInCluster(cluster, num_particles, i)){
-                energy_old = calcEnergy->p2p(cluster[counter], i);
+                energy_old = calcEnergy->p2p(cluster[counter],i);
                 energy_new = calcEnergy->p2p(&reflection, i);
                 if (ran2() < (1-exp((energy_old-energy_new)/sim->temper))){//ran2() < (1-exp(-1.0*((energy_new-energy_old)/sim->temper))) acceptance criteria vis. Reference
                     //Addition of chain into cluster
@@ -1175,6 +1243,53 @@ void MoveCreator::clusterRotate(vector<Particle> &cluster, double max_angle) {
     }
 }
 
+void MoveCreator::clusterRotate(vector<Particle> &cluster, double angle, Vector axis) {
+    Vector cluscm;
+    double vc,vs;
+
+    cluscm = clusterCM(cluster);
+
+    // create rotation quaternion
+    vc = cos(angle);
+    if (ran2() <0.5) vs = sqrt(1.0 - vc*vc);
+    else vs = -sqrt(1.0 - vc*vc); /*randomly choose orientation of direction of rotation clockwise or counterclockwise*/
+
+    Quat newquat(vc, axis.x*vs, axis.y*vs, axis.z*vs);
+
+    //quatsize=sqrt(newquat.w*newquat.w+newquat.x*newquat.x+newquat.y*newquat.y+newquat.z*newquat.z);
+
+    //shift position to geometrical center
+    for(unsigned int i=0; i<cluster.size(); i++) {
+        //shift position to geometrical center
+        cluster[i].pos.x -= cluscm.x;
+        cluster[i].pos.y -= cluscm.y;
+        cluster[i].pos.z -= cluscm.z;
+        //scale things by geo.box not to have them distorted
+        cluster[i].pos.x *= conf->geo.box.x;
+        cluster[i].pos.y *= conf->geo.box.y;
+        cluster[i].pos.z *= conf->geo.box.z;
+        //do rotation
+        cluster[i].pos.rotate(newquat);
+        cluster[i].dir.rotate(newquat);
+        cluster[i].patchdir[0].rotate(newquat);
+        cluster[i].patchdir[1].rotate(newquat);
+        cluster[i].chdir[0].rotate(newquat);
+        cluster[i].chdir[1].rotate(newquat);
+        cluster[i].patchsides[0].rotate(newquat);
+        cluster[i].patchsides[1].rotate(newquat);
+        cluster[i].patchsides[2].rotate(newquat);
+        cluster[i].patchsides[3].rotate(newquat);
+        //sclae back
+        cluster[i].pos.x /= conf->geo.box.x;
+        cluster[i].pos.y /= conf->geo.box.y;
+        cluster[i].pos.z /= conf->geo.box.z;
+        //shift positions back
+        cluster[i].pos.x += cluscm.x;
+        cluster[i].pos.y += cluscm.y;
+        cluster[i].pos.z += cluscm.z;
+    }
+}
+
 Vector MoveCreator::clusterCM(vector<Particle> &cluster) {
     double chainVolume=0.0;
     Vector cluscm(0.0, 0.0, 0.0);
@@ -1214,19 +1329,26 @@ Vector MoveCreator::clusterCM(vector<int> &cluster) {
 }
 
 void MoveCreator::clusterRotate(vector<int> &cluster, double max_angle) {
+    Vector axis;
+    axis.randomUnitSphere(); /*random axes for rotation*/
+    MoveCreator::clusterRotateD(cluster, max_angle * ran2(), axis);
+}
+
+void MoveCreator::clusterRotateD(vector<int> &cluster, double angle, Vector axis) {
     Vector cluscm;
     double vc,vs;
-    Vector newaxis;
 
     cluscm = clusterCM(cluster);
 
     // create rotation quaternion
-    newaxis.randomUnitSphere(); /*random axes for rotation*/
-    vc = cos(max_angle * ran2() );
-    if (ran2() <0.5) vs = sqrt(1.0 - vc*vc);
-    else vs = -sqrt(1.0 - vc*vc); /*randomly choose orientation of direction of rotation clockwise or counterclockwise*/
+    vc = cos(labs(angle));
+    if (angle > 0.0){
+        vs = sqrt(1.0 - vc*vc);
+    }else{
+        vs = -sqrt(1.0 - vc*vc);
+    }
 
-    Quat newquat(vc, newaxis.x*vs, newaxis.y*vs, newaxis.z*vs);
+    Quat newquat(vc, axis.x*vs, axis.y*vs, axis.z*vs);
 
     //quatsize=sqrt(newquat.w*newquat.w+newquat.x*newquat.x+newquat.y*newquat.y+newquat.z*newquat.z);
 

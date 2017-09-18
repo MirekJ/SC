@@ -72,7 +72,63 @@ public:
     Vector minDistSegments(const Vector &segA, const Vector &segB, double halfl1, double halfl2, const Vector &r_cm);
 
     inline double atrE(const Ia_param& iaParam, const Vector& p1Dir, const Vector& p2Dir, const Patch& p1P, const Patch& p2P, const Vector& r_cm,
-                int patchnum1, int patchnum2, double& S1, double& S2, double& T1, double& T2);
+                int patchnum1, int patchnum2, double& S1, double& S2, double& T1, double& T2){
+        Vector vec1, vec2, vec_intrs, vec_mindist;
+        double atrenergy = 0, ndist, a, paral, f1, f2;
+
+        // 3 - scaling function1: dependence on the length of intersetions
+        double v1 = fabs(S1-S2);
+        double v2 = fabs(T1-T2);
+        double f0 = 0.5*(v1+v2);
+
+        // 4a - with two intersection pieces calculate vector between their CM -this is for angular orientation
+        vec1 = ((S1+S2)*0.5) * p1Dir;
+        vec2 = ((T1+T2)*0.5) * p2Dir;
+        vec_intrs.x = vec2.x - vec1.x - r_cm.x; //vec_intrs should be from sc1 to sc2
+        vec_intrs.y = vec2.y - vec1.y - r_cm.y;
+        vec_intrs.z = vec2.z - vec1.z - r_cm.z;
+
+        // 4b - calculate closest distance attractive energy from it
+        vec_mindist = minDistSegments(p1Dir, p2Dir, v1, v2, vec_intrs);
+        ndist = sqrt(DOT(vec_mindist, vec_mindist));
+
+        //
+        // POTENTIAL FUNCTION
+        //
+        if (ndist < iaParam.pdis)
+            atrenergy = -iaParam.epsilon;
+        else {
+            atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
+            atrenergy *= -atrenergy * iaParam.epsilon;
+        }
+
+        //
+        // 5 - scaling function2: angular dependence of patch1
+        //
+        vec1 = vec_intrs;
+        vec1 = vec1.perpProject(p1Dir);
+        a = DOT(vec1, p1P.dir) / vec1.size();
+        f1 = fanglScale(a, iaParam.pcangl[0+2*patchnum1], iaParam.pcanglsw[0+2*patchnum1]);
+
+        //
+        // 6 - scaling function3: angular dependence of patch2
+        //
+        vec1 = -1.0 * vec_intrs;
+        vec1 = vec1.perpProject(p2Dir);
+        a = DOT(vec1, p2P.dir) / vec1.size();
+        f2 = fanglScale(a, iaParam.pcangl[1+2*patchnum2], iaParam.pcanglsw[1+2*patchnum2]);
+
+        //
+        // 7 - add scaling increased if particles are parallel or antiparallel
+        //
+        paral = 1.0;
+        if( iaParam.parallel[patchnum1 + 2*patchnum2] != 0.0)
+            paral = scparallel(iaParam.parallel[patchnum1 + 2*patchnum2], p1Dir, p2Dir);
+        //7- put it all together, CPSC + PSC -> dont have PARAL E
+        atrenergy *= f0 * f1 * f2 * paral;
+
+        return atrenergy;
+    }
 
     inline double scparallel(double epsilonparallel, const Vector& dir1, const Vector& dir2){
         double cosa=DOT(dir1,dir2);
@@ -211,8 +267,6 @@ public:
         return 0.0;
     }
 };
-
-
 
 
 /**
@@ -1197,11 +1251,9 @@ public:
     }
 };
 
-
-
-
 class PairE {
     EBasic* eFce[MAXT][MAXT];
+    CPsc<WcaTruncSq>* patchE;
 public:
     GeoBase* pbc;                   // box size
     bool verbose = false;
@@ -1217,6 +1269,22 @@ public:
         double dist = sqrt(dotrcm);
 
         return (*eFce[part1->type][part2->type])(dist, r_cm, part1, part2, conlist); // on fast fce (SPA, SPN) function call slows the sim ~4%
+    }
+
+    double operator() (Particle* part1, int patchnum1,  Particle* part2, int patchnum2, ConList* conlist) {
+            Vector r_cm = pbc->image(&part1->pos, &part2->pos);
+            double dotrcm = r_cm.dot(r_cm);
+
+            if (dotrcm > topo.sqmaxcut && conlist->isEmpty)
+                return 0.0;  // distance so far that even spherocylinders cannot be within cutoff
+
+            return (*patchE)( topo.ia_params[part1->type][part2->type],
+                    part1->dir,
+                    part2->dir,
+                    Patch(part1->patchdir[0], part1->patchsides[0], part1->patchsides[1]),
+                    Patch(part2->patchdir[0], part2->patchsides[0], part2->patchsides[1]),
+                    r_cm,
+                    patchnum1,patchnum2);
     }
 
 private:
