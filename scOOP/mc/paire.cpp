@@ -274,10 +274,14 @@ double EPatch<EPotential>::atrE(const Ia_param &iaParam, const Vector &p1Dir, co
     //
     // POTENTIAL FUNCTION
     //
-    if (ndist < iaParam.pdis)
+//    cout << "pdis_x["<< patchnum1 << ", " << patchnum2 << "] = " << iaParam.pdis_x[patchnum1+2*patchnum2] << endl;
+//    cout << "pswitch_x["<< patchnum1 << ", " << patchnum2 << "] = " << iaParam.pswitch_x[patchnum1+2*patchnum2] << endl;
+    if (ndist < iaParam.pdis_x[patchnum1+2*patchnum2])
+//    if (ndist < iaParam.pdis)
         atrenergy = -iaParam.epsilon;
     else {
-        atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
+        atrenergy = cos(PIH*(ndist - iaParam.pdis_x[patchnum1+2*patchnum2]) / iaParam.pswitch_x[patchnum1+2*patchnum2]);
+//        atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
         atrenergy *= -atrenergy * iaParam.epsilon;
     }
 
