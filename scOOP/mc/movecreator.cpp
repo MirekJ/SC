@@ -567,6 +567,34 @@ double MoveCreator::pressureMove() {
             edriftchanges = enermove - energy;
         }
         break;
+    case 5:
+        // Box size change only in y direction
+        side = &(conf->geo.box.y);
+        area = conf->geo.box.x * conf->geo.box.z;
+
+        old_side = *side;
+        *side += sim->stat.edge.mx * (ran2() - 0.5);
+
+        reject = 0;
+        if (wl.wlm[0] > 0) {  /* get new neworder for wang-landau */
+            wlener = wl.runPress(reject, radiusholemax_orig);
+        }
+        if (!reject) { // wang-landaou ok, try move - calculate energy
+            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) / sim->temper;
+
+            enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
+        }
+        if ( reject || *side <= 0.0 || ( moveTry(energy+wlener,enermove,sim->temper) ) ) { // probability acceptance
+            *side = old_side;
+            sim->stat.edge.rej++;
+            wl.reject(radiusholemax_orig, wl.wlm);
+        } else {  // move was accepted
+            sim->stat.edge.acc++;
+            calcEnergy->eMat.swapEMatrices();
+            wl.accept(wl.wlm[0]);
+            edriftchanges = enermove - energy;
+        }
+        break;
 
     default:
         fprintf (stderr, "ERROR: unknown type of pressure coupling %d",sim->ptype);
