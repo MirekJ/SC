@@ -171,6 +171,8 @@ double MoveCreator::clusterMoveGeom(long target) {
     for ( std::vector<Molecule>::iterator it = chainsToFix.begin(); it != chainsToFix.end(); ++it ){
         conf->makeMoleculeWhole(&(*it));
     }
+    calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
+    calcEnergy->eMat.swapEMatrices();
     return calcEnergy->allToAll()-edriftchanges;
 }
 
