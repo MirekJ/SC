@@ -435,7 +435,7 @@ double MoveCreator::pressureMove() {
             wlener = wl.runPress(reject, radiusholemax_orig);
         }
         if (!reject) { // wang-landaou ok, try move - calculate energy
-            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) / sim->temper;
+            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) * sim->temper;
 
             enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
         }
@@ -464,7 +464,7 @@ double MoveCreator::pressureMove() {
             wlener = wl.runPress(reject, radiusholemax_orig);
         }
         if (!reject) { /* wang-landaou ok, try move - calcualte energy */
-            enermove = sim->press * (pvoln - pvol) - (double)conf->pvec.size() * log(pvoln/pvol) / sim->temper;
+            enermove = sim->press * (pvoln - pvol) - (double)conf->pvec.size() * log(pvoln/pvol) * sim->temper;
 
             enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
         }
@@ -494,7 +494,7 @@ double MoveCreator::pressureMove() {
             wlener = wl.runPress(reject, radiusholemax_orig, true);
         }
         if (!reject) { // wang-landaou ok, try move - calculate energy
-            enermove = sim->press * conf->geo.box.z * (pvoln - pvol) - (double)conf->pvec.size() * log(pvoln/pvol) / sim->temper;
+            enermove = sim->press * conf->geo.box.z * (pvoln - pvol) - (double)conf->pvec.size() * log(pvoln/pvol) * sim->temper;
 
             enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
         }
@@ -580,7 +580,7 @@ double MoveCreator::pressureMove() {
             wlener = wl.runPress(reject, radiusholemax_orig);
         }
         if (!reject) { // wang-landaou ok, try move - calculate energy
-            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) / sim->temper;
+            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) * sim->temper;
 
             enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
         }
