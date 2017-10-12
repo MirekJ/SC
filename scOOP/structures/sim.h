@@ -310,9 +310,15 @@ private:
             fprintf (stderr, "ERROR: Maximum orientation change for chains must be in range 0 to 180.\n\n");
             exit (1);
         }
-        if ( (ptype <0) || (ptype>4) ) {
-            fprintf (stderr, "ERROR: Unknown pressure coupling %d. Program only knows: 0 - anisotropic coupling, \
-                    1 - isotropic coupling, 2 - isotropic in xy z=const, 3 - isotropic xy V=const.\n\n",ptype);
+        if ( (ptype <0) || (ptype>5) ) {
+            fprintf (stderr, "ERROR: Unknown pressure coupling %d.\nProgram only knows:\n\
+                    0 - anisotropic coupling\n\
+                    1 - isotropic coupling\n\
+                    2 - isotropic in xy z=const\n\
+                    3 - isotropic xy V=const\
+                    4 - anisotropic xy z=const\
+                    5 - box change in y while x and z are const\
+                    \n\n",ptype);
             exit (1);
         }
         if ( (wlm[0] <0) || (wlm[0] > 9) || (wlm[1] <0) || (wlm[1] > 9)  ) {
