@@ -540,24 +540,27 @@ double MoveCreator::pressureMove() {
         break;
     case 4:
         // Anisotropic pressure coupling in xy, z const
-        psch = sim->stat.edge.mx * (ran2() - 0.5); // select random change in edge size
-
-        if (ran2() > 0.5){ // select eithr x ro y axis to change
+        if (ran2() > 0.5){ // select either x ro y axis to change
             side = &(conf->geo.box.x);
+            area =   conf->geo.box.y * conf->geo.box.z;
         }else{
             side = &(conf->geo.box.y);
+            area =   conf->geo.box.x * conf->geo.box.z;
         }
-        (*side) += psch;
+        old_side = *side;
+        *side += sim->stat.edge.mx * (ran2() - 0.5);
 
         reject = 0;
         if (wl.wlm[0] > 0) {  // get new neworder for wang-landau
             wlener = wl.runPress(reject, radiusholemax_orig);
         }
         if (!reject) { // wang-landaou ok, try move - calculate energy
+            enermove = sim->press * area * (*side - old_side) - (double)conf->pvec.size() * log(*side/old_side) * sim->temper;
+
             enermove += calcEnergy->allToAll(calcEnergy->eMat.energyMatrixTrial);
         }
-        if ( reject || moveTry(energy+wlener,enermove,sim->temper) )  { // probability acceptance
-            (*side) -= psch;
+        if ( reject || *side <= 0.0 || moveTry(energy+wlener,enermove,sim->temper) )  { // probability acceptance
+            *side = old_side;
             sim->stat.edge.rej++;
             wl.reject(radiusholemax_orig, wl.wlm);
         } else { // move was accepted
@@ -570,7 +573,7 @@ double MoveCreator::pressureMove() {
     case 5:
         // Box size change only in y direction
         side = &(conf->geo.box.y);
-        area = conf->geo.box.x * conf->geo.box.z;
+        area =   conf->geo.box.x * conf->geo.box.z;
 
         old_side = *side;
         *side += sim->stat.edge.mx * (ran2() - 0.5);
