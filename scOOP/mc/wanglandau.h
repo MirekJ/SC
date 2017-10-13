@@ -342,12 +342,12 @@ private:
 
     // case:8
     inline void boxSize_x(int wli){
-            neworder[wli] = conf->geo.box.x;
+            neworder[wli] = ceil( (conf->geo.box.x - minorder[wli]) / dorder[wli]);
     }
 
     // case:9
     inline void boxSize_y(int wli){
-            neworder[wli] = conf->geo.box.y;
+            neworder[wli] = ceil( (conf->geo.box.y - minorder[wli]) / dorder[wli]);
     }
 
     inline void def(int wli) {
