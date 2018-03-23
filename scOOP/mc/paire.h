@@ -95,10 +95,10 @@ public:
         //
         // POTENTIAL FUNCTION
         //
-        if (ndist < iaParam.pdis)
+        if (ndist < iaParam.pdis_x[patchnum1+2*patchnum2])
             atrenergy = -iaParam.epsilon;
         else {
-            atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
+            atrenergy = cos(PIH*(ndist - iaParam.pdis_x[patchnum1+2*patchnum2]) / iaParam.pswitch_x[patchnum1+2*patchnum2]);
             atrenergy *= -atrenergy * iaParam.epsilon;
         }
 
