@@ -197,15 +197,21 @@ public:
     double A;                   ///< \brief A = 4 * epsilon * sigma^12
     double B;                   ///< \brief A = 4 * epsilon * sigma^6
     double pdis;                ///< \brief Interaction distance of patch
+    double pdis_x[4];
     double pdisSq;              ///< \brief Interaction distance of patch squared
+    double pdisSq_x[4];
     double pswitch;             ///< \brief Switch of distance of patch
+    double pswitch_x[4];
     double pswitchINV;          ///< \brief Inverted Switch of distance of patch
+    double pswitchINV_x[4];
     double pangl[4];            ///< \brief angular size of patch as was specifid in input
     double panglsw[4];          ///< \brief angular size of patchswitch as was specifid in input
     double pcangl[4];           ///< \brief cosine of half size angle - rotation from patch direction to side
     double pcanglsw[4];         ///< \brief cosine of half size angle plus switch - rotation from patch direction to side
     double rcut;                ///< \brief Cutoff for attraction
+    double rcut_x[4];
     double rcutSq;              ///< \brief Cutoff for attraction squared
+    double rcutSq_x[4];
     double rcutwca;             ///< \brief Cutoff for repulsion
     double rcutwcaSq;           ///< \brief Cutoff for repulsion squared
     double pcoshalfi[4];        ///< \brief Cosine of half angle going to side of interaction

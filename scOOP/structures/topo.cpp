@@ -133,6 +133,52 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                     ia_params[i][j].rcut = ia_params[i][j].pswitch+ia_params[i][j].pdis;
                     ia_params[i][j].rcutSq = ia_params[i][j].rcut * ia_params[i][j].rcut;
 
+                    // Diferent interaction ranges hack
+                    ia_params[i][j].pdis_x[0] = AVER(ia_params[i][i].pdis      - ia_params[i][i].rcutwca,
+                                                     ia_params[j][j].pdis      - ia_params[j][j].rcutwca)
+                                                +    ia_params[i][j].rcutwca;
+                    ia_params[i][j].pdis_x[1] = AVER(ia_params[i][i].pdis_x[3] - ia_params[i][i].rcutwca,
+                                                     ia_params[j][j].pdis      - ia_params[j][j].rcutwca)
+                                                +    ia_params[i][j].rcutwca;
+                    ia_params[i][j].pdis_x[2] = AVER(ia_params[i][i].pdis      - ia_params[i][i].rcutwca,
+                                                     ia_params[j][j].pdis_x[3] - ia_params[j][j].rcutwca)
+                                                +    ia_params[i][j].rcutwca;
+                    ia_params[i][j].pdis_x[3] = AVER(ia_params[i][i].pdis_x[3] - ia_params[i][i].rcutwca,
+                                                     ia_params[j][j].pdis_x[3] - ia_params[j][j].rcutwca)
+                                                +    ia_params[i][j].rcutwca;
+
+                    ia_params[i][j].pdisSq_x[0] = ia_params[i][j].pdis_x[0] * ia_params[i][j].pdis_x[0];
+                    ia_params[i][j].pdisSq_x[1] = ia_params[i][j].pdis_x[1] * ia_params[i][j].pdis_x[1];
+                    ia_params[i][j].pdisSq_x[2] = ia_params[i][j].pdis_x[2] * ia_params[i][j].pdis_x[2];
+                    ia_params[i][j].pdisSq_x[3] = ia_params[i][j].pdis_x[3] * ia_params[i][j].pdis_x[3];
+
+                    ia_params[i][j].pswitch_x[0] = AVER(ia_params[i][i].pswitch     , ia_params[j][j].pswitch     );
+                    ia_params[i][j].pswitch_x[1] = AVER(ia_params[i][i].pswitch_x[3], ia_params[j][j].pswitch     );
+                    ia_params[i][j].pswitch_x[2] = AVER(ia_params[i][i].pswitch     , ia_params[j][j].pswitch_x[3]);
+                    ia_params[i][j].pswitch_x[3] = AVER(ia_params[i][i].pswitch_x[3], ia_params[j][j].pswitch_x[3]);
+
+                    ia_params[i][j].pswitchINV_x[0] = 1.0 / ia_params[i][j].pswitch_x[0];
+                    ia_params[i][j].pswitchINV_x[1] = 1.0 / ia_params[i][j].pswitch_x[1];
+                    ia_params[i][j].pswitchINV_x[2] = 1.0 / ia_params[i][j].pswitch_x[2];
+                    ia_params[i][j].pswitchINV_x[3] = 1.0 / ia_params[i][j].pswitch_x[3];
+
+                    ia_params[i][j].rcut_x[0] = ia_params[i][j].pswitch_x[0] + ia_params[i][j].pdis_x[0];
+                    ia_params[i][j].rcut_x[1] = ia_params[i][j].pswitch_x[1] + ia_params[i][j].pdis_x[1];
+                    ia_params[i][j].rcut_x[2] = ia_params[i][j].pswitch_x[2] + ia_params[i][j].pdis_x[2];
+                    ia_params[i][j].rcut_x[3] = ia_params[i][j].pswitch_x[3] + ia_params[i][j].pdis_x[3];
+
+                    ia_params[i][j].rcutSq_x[0] = ia_params[i][j].rcut_x[0] * ia_params[i][j].rcut_x[0];
+                    ia_params[i][j].rcutSq_x[1] = ia_params[i][j].rcut_x[1] * ia_params[i][j].rcut_x[1];
+                    ia_params[i][j].rcutSq_x[2] = ia_params[i][j].rcut_x[2] * ia_params[i][j].rcut_x[2];
+                    ia_params[i][j].rcutSq_x[3] = ia_params[i][j].rcut_x[3] * ia_params[i][j].rcut_x[3];
+
+                    // set maximal value as cut-off distance
+                    for(int p=0; p<4; p++){
+                        if (ia_params[i][j].rcut_x[p] > ia_params[i][j].rcut)
+                            ia_params[i][j].rcut = ia_params[i][j].rcut_x[p];
+                            ia_params[i][j].rcutSq =  ia_params[i][j].rcutSq_x[p];
+                    }
+
                     // if not non-attractive == if attractive
                     if (!((ia_params[i][j].geotype[0] % 10 == 0) || (ia_params[i][j].geotype[1] % 10 == 0))) {
 
@@ -267,7 +313,7 @@ int Topo::fillTypes(char **pline) {
             typestr[STRLEN],
             paramstr[STRLEN];
 
-    double  param[13];
+    double  param[15];
         /* 0: epsilon
          * 1: sigma
          * 2: attraction dist
@@ -286,7 +332,7 @@ int Topo::fillTypes(char **pline) {
     beforecommand( typestr,  *pline, SEPARATOR);
     aftercommand(  paramstr, *pline, SEPARATOR);
 
-    fields = sscanf(paramstr, "%s %d %s %le %le %le %le %le %le %le %le %le %le %le %le %le",
+    fields = sscanf(paramstr, "%s %d %s %le %le %le %le %le %le %le %le %le %le %le %le %le %le %le",
                     name, &type, geotype,
                     &param[0],  /*epsilon                               */
                     &param[1],  /*sigma                                 */
@@ -297,10 +343,12 @@ int Topo::fillTypes(char **pline) {
                     &param[6],  /*length                                */
                     &param[7],  /*parallel_eps                          */
                     &param[8],  /*second patche rotation or chirality   */
-                    &param[9],  /*second patch angle                    */
-                    &param[10], /*second patch angle switch             */
-                    &param[11], /*second patch parallel_eps             */
-                    &param[12]  /*chirality                             */
+                    &param[9],  /*second pdist                    */
+                    &param[10],  /*second pswitch                    */
+                    &param[11],  /*second patch angle                    */
+                    &param[12], /*second patch angle switch             */
+                    &param[13], /*second patch parallel_eps             */
+                    &param[14]  /*chirality                             */
                     );
 
     cout << "Fields:" << fields << endl;
@@ -459,28 +507,37 @@ int Topo::fillTypes(char **pline) {
             geotype_i == TCHCPSC
         ) {
 
+            ia_params[type][type].pdis_x[0]         = ia_params[type][type].pdis;
+            ia_params[type][type].pdis_x[1]         = AVER(param[9],ia_params[type][type].pdis);
+            ia_params[type][type].pdis_x[2]         = AVER(ia_params[type][type].pdis, param[9]);
+            ia_params[type][type].pdis_x[3]         = param[9];
+
+            ia_params[type][type].pswitch_x[0]      = ia_params[type][type].pswitch;
+            ia_params[type][type].pswitch_x[1]      = AVER(param[10],ia_params[type][type].pswitch);
+            ia_params[type][type].pswitch_x[2]      = AVER(ia_params[type][type].pswitch,param[10]);
+            ia_params[type][type].pswitch_x[3]      = param[10];
+
         for (int i = 0; i < 2; i++){
             ia_params[type][type].csecpatchrot[i]   = cos(param[8] / 360 * PI);
             ia_params[type][type].ssecpatchrot[i]   = sqrt(1 - ia_params[type][type].csecpatchrot[i] * ia_params[type][type].csecpatchrot[i]);
             //fprintf(stdout, " | %g %g", ia_params[type][type].csecpatchrot[0], ia_params[type][type].ssecpatchrot[0]);
 
-            ia_params[type][type].pangl[i+2]        = param[9];
-            ia_params[type][type].panglsw[i+2]      = param[10];
-            ia_params[type][type].pcangl[i+2]       = cos(param[9]/2.0/180*PI);                 // C1
-            ia_params[type][type].pcanglsw[i+2]     = cos((param[9]/2.0+param[10])/180*PI);     // C2
-            ia_params[type][type].pcoshalfi[i+2]    = cos((param[9]/2.0+param[10])/2.0/180*PI);
+            ia_params[type][type].pangl[i+2]        = param[11];
+            ia_params[type][type].panglsw[i+2]      = param[12];
+            ia_params[type][type].pcangl[i+2]       = cos(param[11]/2.0/180*PI);                 // C1
+            ia_params[type][type].pcanglsw[i+2]     = cos((param[11]/2.0+param[12])/180*PI);     // C2
+            ia_params[type][type].pcoshalfi[i+2]    = cos((param[13]/2.0+param[14])/2.0/180*PI);
             ia_params[type][type].psinhalfi[i+2]    = sqrt(1.0 - ia_params[type][type].pcoshalfi[i+2] * ia_params[type][type].pcoshalfi[i+2]);
         }
-        if (param[7] > 0.0 && param[11] > 0.0){
-            ia_params[type][type].parallel[1]       = sqrt(param[7]*param[11]);
-            ia_params[type][type].parallel[2]       = sqrt(param[7]*param[11]);
+        if (param[7] > 0.0 && param[13] > 0.0){
+            ia_params[type][type].parallel[1]       = sqrt(param[7]*param[13]);
+            ia_params[type][type].parallel[2]       = sqrt(param[7]*param[13]);
         }
-        if (param[7] < 0.0 && param[11] < 0.0){
-            ia_params[type][type].parallel[1]       = -sqrt(param[7]*param[11]);
-            ia_params[type][type].parallel[2]       = -sqrt(param[7]*param[11]);
+        if (param[7] < 0.0 && param[13] < 0.0){
+            ia_params[type][type].parallel[1]       = -sqrt(param[7]*param[13]);
+            ia_params[type][type].parallel[2]       = -sqrt(param[7]*param[13]);
         }
-        ia_params[type][type].parallel[3]       = param[11];
-        cout << "type: " << type << " | " << param[7] << " " << param[11] << endl;
+        ia_params[type][type].parallel[3]           = param[13];
 
         fprintf(stdout, " | %g  %g %g %g", param[8], ia_params[type][type].pangl[2], ia_params[type][type].panglsw[2], ia_params[type][type].parallel[2]);
     }
@@ -492,10 +549,10 @@ int Topo::fillTypes(char **pline) {
 
         for (int i = 0; i < 2; i++){
             // Chirality data
-            ia_params[type][type].chiral_cos[i] = cos(param[12] / 360 * PI);
+            ia_params[type][type].chiral_cos[i] = cos(param[14] / 360 * PI);
             ia_params[type][type].chiral_sin[i] = sqrt(1 - ia_params[type][type].chiral_cos[i] * ia_params[type][type].chiral_cos[i]);
         }
-        fprintf(stdout, "| chirality %g ", param[12]);
+        fprintf(stdout, "| chirality %g ", param[14]);
     }
 
     // Volume

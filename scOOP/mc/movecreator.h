@@ -56,6 +56,8 @@ public:
      */
     double clusterMoveGeom(long target);
 
+    double moveTetramer2D(long target);
+
     double printClustersConf();
 
     /**
@@ -151,6 +153,10 @@ private:
     void clusterRotate(vector<int >& cluster, double max_angle);
 
     void clusterRotate(vector<Particle >& cluster, double max_angle);
+    void clusterRotate(vector<Particle> &cluster, double angle, Vector axis);
+
+    void clusterRotateD(vector<int> &cluster, double angle, Vector axis);
+
 
     inline Vector clusterCM(vector<int >& cluster);
 

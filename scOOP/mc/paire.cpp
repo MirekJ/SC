@@ -9,6 +9,7 @@ void PairE::initIntFCE() {
     // Fill in the names of the functions for calculating the
     // interaction energy
     long geotype, other_geotype;
+    patchE =  new CPsc<WcaTruncSq>;
     for(int i = 0; i < MAXT; i++){
         for(int j = 0; j < MAXT; j++){
             // Initialize them as not existing
@@ -248,7 +249,7 @@ Vector EPatch<EPotential>::minDistSegments(const Vector &segA, const Vector &seg
 
     return vec;
 }
-
+/*
 template<typename EPotential>
 double EPatch<EPotential>::atrE(const Ia_param &iaParam, const Vector &p1Dir, const Vector &p2Dir, const Patch &p1P, const Patch &p2P, const Vector &r_cm, int patchnum1, int patchnum2, double &S1, double &S2, double &T1, double &T2) {
     Vector vec1, vec2, vec_intrs, vec_mindist;
@@ -273,10 +274,14 @@ double EPatch<EPotential>::atrE(const Ia_param &iaParam, const Vector &p1Dir, co
     //
     // POTENTIAL FUNCTION
     //
-    if (ndist < iaParam.pdis)
+//    cout << "pdis_x["<< patchnum1 << ", " << patchnum2 << "] = " << iaParam.pdis_x[patchnum1+2*patchnum2] << endl;
+//    cout << "pswitch_x["<< patchnum1 << ", " << patchnum2 << "] = " << iaParam.pswitch_x[patchnum1+2*patchnum2] << endl;
+    if (ndist < iaParam.pdis_x[patchnum1+2*patchnum2])
+//    if (ndist < iaParam.pdis)
         atrenergy = -iaParam.epsilon;
     else {
-        atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
+        atrenergy = cos(PIH*(ndist - iaParam.pdis_x[patchnum1+2*patchnum2]) / iaParam.pswitch_x[patchnum1+2*patchnum2]);
+//        atrenergy = cos(PIH*(ndist - iaParam.pdis) / iaParam.pswitch);
         atrenergy *= -atrenergy * iaParam.epsilon;
     }
 
@@ -307,3 +312,4 @@ double EPatch<EPotential>::atrE(const Ia_param &iaParam, const Vector &p1Dir, co
 
     return atrenergy;
 }
+*/
