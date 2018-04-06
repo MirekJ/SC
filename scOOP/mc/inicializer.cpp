@@ -880,7 +880,8 @@ int Inicializer::fillTypes(char **pline) {
             topo.ia_params[type][type].csecpatchrot[i] = cos(param[8] / 360 * PI);
             topo.ia_params[type][type].ssecpatchrot[i] = sqrt(1 - topo.ia_params[type][type].csecpatchrot[i] * topo.ia_params[type][type].csecpatchrot[i]);
             //fprintf(stdout, " | %g %g", topo.ia_params[type][type].csecpatchrot[0], topo.ia_params[type][type].ssecpatchrot[0]);
-
+        }
+    }
     if (
             geotype_i == TPSC       ||
             geotype_i == TCPSC      ||
