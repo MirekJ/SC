@@ -535,21 +535,6 @@ int Topo::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
         fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
         return 0;
     }
-
-//    while ((int)strlen(pline1) > 0) {
-//        num1 = strtol(pline1, &pline2, 10);
-//        trim(pline2);
-//        if ((int)strlen(pline2) > 0) {
-//            num2 = strtol(pline2, &pline1, 10);
-//            trim(pline1);
-//            exlusions[num1][num2]=true;
-//            exlusions[num2][num1]=true;
-//        } else {
-//            fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
-//            return 0;
-//        }
-//    }
-
     return 1;
 }
 
