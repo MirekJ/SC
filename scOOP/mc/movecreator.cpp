@@ -107,8 +107,8 @@ double MoveCreator::clusterMove() {
     long target;
 
     target = ran2() * (long)conf->pvec.size();// Select random particle from config
-    //edriftchanges = clusterMoveGeom(target);// Call geometric cluster move
-    edriftchanges = moveTetramer2D(target);
+    edriftchanges = clusterMoveGeom(target);// Call geometric cluster move
+    //edriftchanges = moveTetramer2D(target);
     return edriftchanges;
 }
 
