@@ -3,15 +3,12 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-QMAKE_CXXFLAGS += -Ofast -march=native -std=c++11 -Wno-unused-parameter # -g -fno-inline
-#QMAKE_CXXFLAGS += -O0 -g -march=native -std=c++11 -Wno-unused-parameter # -g -fno-inline
-
+QMAKE_CXXFLAGS += -Ofast -march=native -std=c++11 -Wno-unused-parameter #-fno-inline #  -pg
 
 #QMAKE_CXXFLAGS+= -fopenmp
 #QMAKE_LFLAGS +=  -fopenmp
 
-# Uncoment all line below to compile MPI version
-#--------------------MPI--------------------
+############################################### MPI RUN
 #QMAKE_CXXFLAGS += -DENABLE_MPI
 
 #QMAKE_CXX = mpicxx
@@ -24,7 +21,7 @@ QMAKE_CXXFLAGS += -Ofast -march=native -std=c++11 -Wno-unused-parameter # -g -fn
 #QMAKE_LFLAGS += $$system(mpicxx --showme:link)
 #QMAKE_CXXFLAGS += $$system(mpicxx --showme:compile) -DMPICH_IGNORE_CXX_SEEK
 #QMAKE_CXXFLAGS_RELEASE += $$system(mpicxx --showme:compile) -DMPICH_IGNORE_CXX_SEEK
-#--------------------MPI--------------------
+###############################################
 
 SOURCES += main.cpp \
     mc/wanglandau.cpp \
@@ -87,11 +84,15 @@ HEADERS += \
     mc/analysis.h \
     mc/paire.h \
     structures/statistics.h \
-    mc/clust.h
+    mc/clust.h \
+    structures/mpicout.h
 
 OTHER_FILES += \
     mc/dSFMT-src-2.2.3/FILES.txt \
     mc/dSFMT-src-2.2.3/LICENSE.txt \
     mc/dSFMT-src-2.2.3/README.jp.txt \
     mc/dSFMT-src-2.2.3/README.txt
+
+DISTFILES += \
+    doc.dox
 

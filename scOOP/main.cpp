@@ -14,7 +14,10 @@
 
 using namespace std;
 
+
+MpiCout mcout(0); // Global mpi cout
 Topo topo; // Global instance of topology
+
 
 #ifdef RAN2
     Ran2 ran2;
@@ -59,13 +62,22 @@ int main(int argc, char** argv) {
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &procs );
     MPI_Comm_rank(MPI_COMM_WORLD, &rank );
+
+    cout << "MPI SIMULATION, rank " << rank << endl;
+    mcout.rank = rank;
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
 #ifdef EXTRA_HYDROPHOBIC_ALL_BODY_ATTRACTION
     cout << "\n!!! Extra hydrophobic interaction in e_cpsc_cpsc added, strenght: " << E_ISO << endl;
 #endif
 
-    cout << "\nPatchy Spherocylinders version 3.6\n-------------------------------------" << endl;
+
+    if(argc==2) {
+        string str1(argv[1]);
+    }
+
+    mcout.get() << "\nPatchy Spherocylinders version 4.0\n-------------------------------------" << endl;
 
     FILE *infile,*outfile,*mov;       // Handle for writing configuration
 
@@ -81,7 +93,7 @@ int main(int argc, char** argv) {
     init.initTop(); // here particleStore filled in setParticleParams
     init.testChains(); // if no chains -> move probability of chains 0
 
-    cout << "\nReading configuration...\n";
+    mcout.get() << "\nReading configuration...\n";
     if(init.poolConfig) {
         infile = fopen(files.configurationPool, "r");
         if (infile == NULL) {
@@ -102,7 +114,7 @@ int main(int argc, char** argv) {
     conf.geo.info();
     fclose (infile);
 
-    cout << "Equilibration of maximum step sizes: " << sim.nequil/2 << " sweeps" << endl;
+    mcout.get() << "Equilibration of maximum step sizes: " << sim.nequil/2 << " sweeps" << endl;
 
     // Empty movie file
     mov = fopen("movie", "w");
@@ -152,6 +164,7 @@ int main(int argc, char** argv) {
     }
 
     Updater updater(&sim, &conf, &files); // need to get an instance of updater after initialization, because of initFCE
+    updater.showPairInteractions = false;
 
     /********************************************************/
     /*                      ANALYZE                         */
@@ -301,14 +314,14 @@ int main(int argc, char** argv) {
     /*                  PRODUCTION RUN                      */
     /********************************************************/
 
-    cout << "Production run:  "<< sim.nsweeps << " sweeps\n" << endl;
+    mcout.get() << "Production run:  "<< sim.nsweeps << " sweeps\n" << endl;
 
     sim.all = clock();
     updater.simulate(sim.nsweeps, 0, sim.paramfrq, sim.report);
     sim.all = clock() - sim.all;
 
 #ifdef ENABLE_MPI
-    cout << sim.pseudoRank << "p(T: " << sim.temper <<" ), MPI replica changeT / changeP / acceptance ratio: " << sim.stat.mpiexch.mx << ", " << sim.stat.mpiexch.angle << ", " << sim.stat.mpiexch.ratio() << endl;
+    cout << sim.pseudoRank << "p, MPI replica changeT / changeP / acceptance ratio: " << sim.stat.mpiexch.mx << ", " << sim.stat.mpiexch.angle << ", " << sim.stat.mpiexch.ratio() << endl;
     //cout << sim.pseudoRank << "p, rej: " << sim.mpiexch.rej << ", acc: " << sim.mpiexch.acc << endl;
 #endif
 
@@ -366,10 +379,10 @@ int main(int argc, char** argv) {
     MPI_Finalize();
 #endif
 
-    cout << "\nSimulation time:" << (double)sim.all / CLOCKS_PER_SEC << " s" << endl;
-    cout << "PairList generation time:" << 100.0*(double)sim.pairList / sim.all << " %" << endl;
+    mcout.get() << "\nSimulation time:" << (double)sim.all / CLOCKS_PER_SEC << " s" << endl;
+    mcout.get() << "PairList generation time:" << 100.0*(double)sim.pairList / sim.all << " %" << endl;
 
-    cout << "\nDONE" << endl;
+    mcout.get() << "\nDONE" << endl;
 
     return 0;
 }

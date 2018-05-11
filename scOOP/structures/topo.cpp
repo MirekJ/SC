@@ -353,6 +353,7 @@ int Topo::fillTypes(char **pline) {
 
     cout << "Fields:" << fields << endl;
 
+    fields -= 5; // number of parameter fields => I am too lazy to adjust everywhere below the numbers
     //DEBUG    fprintf (stdout, "Topology read geotype: %ld with parameters fields %d, str:%s and %s in pline %s\n",geotype,fields,geotypestr,paramstr,pline);
 
     geotype_i = convertGeotype(geotype);

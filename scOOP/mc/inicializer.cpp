@@ -20,7 +20,7 @@ void Inicializer::initTop() {
 
     readTopoFile(exclusions); // EXCLUDE LOADED CORRECTLY 7.8. 2015
 
-    fprintf (stdout, "\nTopology succesfully read. Generating pair interactions...\n");
+    mcout.get() << "\nTopology succesfully read. Generating pair interactions..." << endl;
 
     //fill ia_params combinations and topology parameters
     topo.genParamPairs(exclusions);
@@ -96,9 +96,9 @@ void Inicializer::initSwitchList() {
     }
 
     if (!switchPartExist && sim->switchprob > 0){
-        fprintf(stderr, "TOPOLOGY WARNING: No switchable particles found, but probability for a switch is not zero!\n");
+        cerr << "TOPOLOGY WARNING: No switchable particles found, but probability for a switch is not zero!" << endl;
         sim->switchprob = 0;
-        fprintf(stderr, "TOPOLOGY WARNING: We changed Switch Probability to zero in this run!\n");
+        cerr << "TOPOLOGY WARNING: We changed Switch Probability to zero in this run!" << endl;
     }
 
     //  Mark particles as not switched
@@ -151,14 +151,14 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
 
     if (sscanf(line, "%le %le %le", &(box.x), &(box.y), &(box.z) ) != 3) {
         if(myGetLine(&line, &line_size, *infile) == -1){
-            fprintf (stderr, "ERROR: Could not read box size2.\n\n");
+            cerr << "ERROR: Could not read box size2." << endl;
             return false;
         }
         aftercommand(line2,line,BOXSEP);
         strip_comment(line2);
         trim(line2);
         if (sscanf(line2, "%le %le %le", &(box.x), &(box.y), &(box.z) ) != 3) {
-            fprintf (stderr, "ERROR: Could not read box size3.\n\n");
+            cerr << "ERROR: Could not read box size3." << endl;
             return false;
         }
     }
@@ -166,15 +166,15 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
     conf->geo = Cuboid(box);
 #endif
     if (conf->geo.box.x < maxlength * 2.0 + 2.0) {
-        printf ("WARNING: x (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.x, maxlength * 2.0 + 2.0);
+        mcout.get() << "WARNING: x (" << conf->geo.box.x << ") geo.box length is less than two spherocylinders long (" << maxlength * 2.0 + 2.0 << ")." << endl;
         //exit(1);
     }
     if (conf->geo.box.y < maxlength * 2.0 + 2.0) {
-        printf ("WARNING: y (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.y, maxlength * 2.0 + 2.0);
+        mcout.get() << "WARNING: y (" << conf->geo.box.y << ") geo.box length is less than two spherocylinders long (" << maxlength * 2.0 + 2.0 << ")." << endl;
         //exit(1);
     }
     if (conf->geo.box.z < maxlength * 2.0 + 2.0) {
-        printf ("WARNING: z (%f) geo.box length is less than two spherocylinders long (%f).\n\n", conf->geo.box.z, maxlength * 2.0 + 2.0);
+        mcout.get() <<"WARNING: z (" << conf->geo.box.z << ") geo.box length is less than two spherocylinders long (" << maxlength * 2.0 + 2.0 << ")." << endl;
         //exit(1);
     }
 
@@ -229,8 +229,7 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
 
         if ((topo.ia_params[pvec[i].type][pvec[i].type].geotype[0]<SP)&&( DOT(pvec[i].dir, pvec[i].dir) < ZEROTOL )) {
             //DEBUG_INIT("Geotype = %d < %d", conf->pvec[i].geotype,SP);
-            fprintf (stderr,
-                    "ERROR: Null direction vector supplied for particle %u.\n\n", i+1);
+            fprintf (stderr, "ERROR: Null direction vector supplied for particle %u.\n\n", i+1);
             free(line);
             return false;
         } else {
@@ -238,8 +237,7 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
         }
 
         if ((topo.ia_params[pvec[i].type][pvec[i].type].geotype[0]<SP && topo.ia_params[pvec[i].type][pvec[i].type].geotype[0] != SCN )&&( DOT(pvec[i].patchdir[0], pvec[i].patchdir[0]) < ZEROTOL )) {
-            fprintf (stderr,
-                    "ERROR: Null patch vector supplied for particle %u.\n\n", i+1);
+            fprintf (stderr, "ERROR: Null patch vector supplied for particle %u.\n\n", i+1);
             free(line);
             return false;
         } else {
@@ -324,13 +322,13 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
 void Inicializer::testChains() {
     if (conf->pvec.getChainCount() == 0) {    // no chain -> make the probability of moving them 0
         if (sim->chainprob > 0)
-            printf ("No chains... chain move probability set to 0.\n");
+            mcout.get() << "No chains... chain move probability set to 0." << endl;
         sim->chainprob = 0.0;
     } else {
         for(int i=0; i<conf->pvec.molTypeCount; i++) {
             if(topo.moleculeParam[i].isGrandCanonical() && !topo.moleculeParam[i].isAtomic()) {
                 if(!poolConfig) {
-                    cout << "ChainInsert with no Pool system stated! State [Pool] in top.init" << endl;
+                    mcout.get() << "ChainInsert with no Pool system stated! State [Pool] in top.init" << endl;
                     exit(1);
                 }
             }
@@ -339,7 +337,7 @@ void Inicializer::testChains() {
 }
 
 void Inicializer::initNeighborList() {
-    cout << "\nAllocating memory for pairlist, " << (double) conf->neighborList.size() * sizeof(long) * MAXNEIGHBORS / (1024 *1024) << " MB" << endl;
+    mcout.get() << "\nAllocating memory for pairlist, " << (double) conf->neighborList.size() * sizeof(long) * MAXNEIGHBORS / (1024 *1024) << " MB" << endl;
 
     // Highest guess: Every particle interacts with the others
     // TODO: Make it more sophisticated
@@ -352,8 +350,7 @@ void Inicializer::initNeighborList() {
 
 void Inicializer::initGroupLists() {
 
-    if(SILENT == 1)
-        cout << "Generating GroupLists..." << endl;
+    mcout.get() << "Generating GroupLists..." << endl;
 
     // setGroupList;
     conf->pvec.molTypeCount = 0;
@@ -487,9 +484,7 @@ void Inicializer::readTopoFile(bool exclusions[MAXT][2][MAXT][2]) {
         exit (1);
     }
 
-    if(SILENT == 1)
-        cout << "Reading topology...\n"
-             << "Species:" << endl;
+    mcout.get() << "Reading topology...\n" << "Species:" << endl;
 
     molname[0] = ' ';
 
@@ -540,7 +535,7 @@ void Inicializer::readTopoFile(bool exclusions[MAXT][2][MAXT][2]) {
                         DEBUG_INIT("in the middle of getting to fillmol");
                         molecules[i].name = (char*) malloc(strlen(molname)+1);
                         strcpy(molecules[i].name, molname);
-                        fprintf (stdout, "\nTopology read for molecule: %s \n",molname);
+                        mcout.get() << "\nTopology read for molecule: " << molname << endl;
                     }
                     if (!fillMol(molname, pline, molecules)) {
                         fprintf (stderr, "\nTOPOLOGY ERROR: in reading molecules\n\n");
@@ -673,7 +668,7 @@ int Inicializer::fillSystem(char *pline, char *sysnames[], long **sysmoln, char*
         fprintf (stderr, "TOPOLOGY ERROR: cannot have %ld number of molecules.\n\n", (*sysmoln)[i]);
         return 0;
     }*/
-    fprintf (stdout, "%s %s %ld\n",name, sysnames[i],(*sysmoln)[i]);
+    mcout.get() << name << " " << sysnames[i] << " " << (*sysmoln)[i] << endl;
     return 1;
 }
 
@@ -946,7 +941,7 @@ int Inicializer::fillTypes(char **pline) {
         topo.sqmaxcut = topo.ia_params[type][type].rcutwca;
     if ( topo.ia_params[type][type].rcut > topo.sqmaxcut )
         topo.sqmaxcut = topo.ia_params[type][type].rcut;
-    fprintf(stdout, " \n");
+    mcout.get() << endl;
     DEBUG_INIT("Finished filltypes");
     return 1;
 }
@@ -1020,7 +1015,7 @@ int Inicializer::fillExter(char **pline) {
         fprintf(stdout, "No external potential ");
     }
 
-    fprintf(stdout, " \n");
+    mcout.get() << endl;
     DEBUG_INIT("Finished filling external potential");
     return 1;
 }
@@ -1056,7 +1051,7 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
         fprintf (stdout, "particle %d: \t", j + 1);
         fields =  sscanf(molparams,"%d %ld %lf",molecules[i].type + j,
                          molecules[i].switchtype + j, molecules[i].delta_mu + j);
-        fprintf (stdout, "%d ",molecules[i].type[j]);
+        mcout.get() << "Molecule " << molecules[i].name << " particle " << j + 1 << ": type=" << molecules[i].type[j] << endl;
 
         if(j==0) {
             topo.moleculeParam[i].name = (char*) malloc(strlen(molname)+1);
@@ -1104,7 +1099,7 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
         }
         topo.moleculeParam[i].bond1c = bondk;
         topo.moleculeParam[i].bond1eq = bonddist;
-        fprintf (stdout, "bond1: %f %f \n",topo.moleculeParam[i].bond1c,topo.moleculeParam[i].bond1eq);
+        mcout.get() <<  "bond1: " << topo.moleculeParam[i].bond1c << " " << topo.moleculeParam[i].bond1eq << endl;
         return 1;
     }
     if (!strcmp(molcommand,"BOND2")) {
@@ -1119,7 +1114,7 @@ int Inicializer::fillMol(char *molname, char *pline, MolIO *molecules) {
         }
         topo.moleculeParam[i].bond2c = bondk;
         topo.moleculeParam[i].bond2eq = bonddist;
-        fprintf (stdout, "bond2: %f %f \n",topo.moleculeParam[i].bond2c,topo.moleculeParam[i].bond2eq);
+        mcout.get() << "bond2: " << topo.moleculeParam[i].bond2c << " " << topo.moleculeParam[i].bond2eq << endl;
         return 1;
     }
     if (!strcmp(molcommand,"BONDD")) {

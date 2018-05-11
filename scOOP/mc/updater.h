@@ -10,6 +10,8 @@
 class Updater
 {
 public:
+    bool showPairInteractions = false;
+
     Updater(Sim* sim, Conf* conf, FileNames* files) :
         sim(sim), conf(conf), files(files),
         calcEnergy(sim, conf), move(sim, conf, &calcEnergy), clust(conf, sim, &calcEnergy, files) {
@@ -54,6 +56,12 @@ public:
     void simulate(long nsweeps, long adjust, long paramfrq, long report);
 
 private:
+    bool isSame(double a, double b) {
+        if(fabs(a-b) <  0.0000001)
+            return true;
+        return false;
+    }
+
     /**
      * @brief testEnergyMatrix
      * @return TRUE - Energy matrix is fine
@@ -64,12 +72,7 @@ private:
 
         for (unsigned int i = 1; i < conf->pvec.size(); ++i) {
             for (unsigned long j = 0; j < i; ++j) {
-                if( !(calcEnergy.eMat.energyMatrix->operator [](i)[j] + 0.0000001 >= calcEnergy.p2p(i,j)
-                        && calcEnergy.eMat.energyMatrix->operator [](i)[j] - 0.0000001 <= calcEnergy.p2p(i,j)  ) ) {
-                    cout << "[" << i << "][" << j << "]= " << calcEnergy.eMat.energyMatrix->operator [](i)[j] << ", "
-                         << ", calc= " << calcEnergy.p2p(i,j) << endl;
-                    return false;
-                }
+                assert(isSame(calcEnergy.eMat.energyMatrix->operator [](i)[j], calcEnergy.p2p(i,j)) && "EMat value != calculated energy");
             }
         }
 
