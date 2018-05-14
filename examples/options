@@ -13,14 +13,21 @@ seed = 145658           #  Random number seed
 ###
 ### Barostat == Pressure moves
 ###
-ptype = 1               #  Pressure coupling type (0-anisotropic xyz, 1-isotropic xyz, 2 - isotropic in xy z=const, 3 - isotropic in xy and V=const)
+ptype = 1               #  Pressure coupling type
+                        # 0 = anisotropic xyz
+                        # 1 = isotropic xyz
+                        # 2 = isotropic in xy z=const
+                        # 3 = isotropic in xy and V=const
+                        # 4 = isotropic in x and y,z=const
+                        # 5 = isotropic in y
 press = 0               #  Pressure
-shave = 0               #  Average number of volume change attempts per sweep (usually 1), 0 -> no barostatting
+shave = 0               #  Average number of volume change attempts per sweep (usually 1), 0 -> no barostatting (NVT)
 edge_mx = 0.0           #  Initial maximum box length change
 ###
 ### Wang-Landau method: with constant decrease of bias addition by factor of 2, until less than WL_ALPHATOL -> structures/macros.h
 ###
-wlm = 0                 # O = none
+wlm = 0                 #  Wang landau method
+                        # 0 = none
                         # 1 = z-distance of 1st paticle with respect toward center of mass of all particles
                         # 2 = hole in xyplane
                         # 3 = z-orientation of 1st particle, angle between z-axis and spherocylinder direction, cos(angle) => 0 ot 1.0, Spherocylinder model is symetrical
@@ -28,7 +35,9 @@ wlm = 0                 # O = none
                         # 5 = pore around z axis and above CM
                         # 6 = pore around z axis and above 1st particle
                         # 7 = number of particles in contact (within distance sqrt(WL_CONTACTS -> structures/macros.h))
-wlmtype = 0             #  For which atomic type (from top.init) should the Wang-Landau method be calculated?
+                        # 8 = box size in x direction
+                        # 9 = box size in y direction
+wlmtype = 0             #  For which atomic type (index from top.init) should the Wang-Landau method be calculated?
 ###
 ### Parallel Tempering setting
 ###
@@ -42,14 +51,15 @@ nGrandCanon = 0         #  Number of sweeps between Grand canonical move in swee
 ###
 ### Simulation settings
 ###
-nClustMove = 0          #  Number of sweeps between cluster move
+nClustMove = 0          #  Number of cluster moves in one sweep
 switchprob = 0.00       #  Probability of type switch attempts per sweep
 chainprob = 0.125       #  Probability of chain move attempts per sweep ( 0.25/number of particles in chain)
 chainmmx = 0.1          #  Initial maximum chain displacement
 chainrmx = 0.1          #  Initial maximum chain rotation change (degrees)
 transmx = 0.212         #  Initial maximum displacement
-transmx_type = 3 0.5    # Type specific displacement, transmx_type = type displacement type displacement ...
+transmx_type = 3 0.5    #  Type specific displacement, transmx_type = type displacement type displacement ...
 rotmx = 7.5             #  Initial maximum orientation change (degrees)
+coneAngle = 10.0        #  Maximal angluar deviation of rotation axis from particle direction (smaller angle mean particle rotate closer around its axis)
 ###
 ### Output setting
 ###

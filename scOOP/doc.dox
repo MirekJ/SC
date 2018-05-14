@@ -74,10 +74,10 @@ The following is an excerpt from a topology file and the energy function which t
 @include u
 
  - SPA stands for attractive sphere,
- - EPSILON defines the strength of interaction
+ - EPS defines the strength of interaction
  - SIGMA sets the diameter of the spheres
- - ATTRACTION DIST sets the end of the potential at ATTRACTION_DIST + ATTRACTION_SWITCH
- - ATTRACTION SWITCH is the distance at which the minimum of the potential is reach
+ - ATD sets the end of the potential at ATD + ATS
+ - ATS is the distance at which the minimum of the potential is reach
 
 \image html U.png "Example of energy function for attractive spheres"
 */
@@ -86,9 +86,10 @@ The following is an excerpt from a topology file and the energy function which t
 
 /*! \page Usage Usage
 - \subpage Config
-- \subpage Types
+- \subpage ParticleTypes
 - \subpage Topo
 - \subpage Options
+- \subpage Output
 - \subpage Example_muVT
 - \subpage Example_MultipleWalker
 - \subpage Example_ReplicaExchange
@@ -113,35 +114,228 @@ Example file:
 - NOTE: You are not required to specify the molType(11th variable), the information about molecular types is loaded from top.init
 */
 
-/*! \page Types [Types] parametrization
-\section SPN SPN sphere non-attractive, example topology:
+/*! \page ParticleTypes Particle types
+Parameter types:
+=========
+
+Shortcut  | Full name                              | Description
+  :---:   | :------------------------------------: | :-----------------------------------------
+NAME      |   name                                 |  Arbitrary identificator to name given particle (not used anywhere)
+INDEX     |   index                                |  Integer value in range [0, MAXT] used inside of code to specifie given type. Index used in cluster analysis to refer to given particle type.
+GEOTYPE   |   geometric type                       |  Define particle type (sphere, spherocylinder, spherocylinder with two patches ... etc.)
+EPS       |   epsilon                              |  Interaction strength in given by epsilon in kT units on unit length of spherocylinder. So that if lenght of spherocilinder is doubled also its interaction strenght in parallel dimer is doublet.
+SIGMA     |   sigma                                |  Diameter of ither sphere or width of sherocilinder in reduced units.
+ATD       |   attraction distance                  |  Atraction distance to which Weeks-Chandler-Andersen is minimal see(\subpage theory).
+ATS       |   attraction switch                    |  Range at which interaction smoothly goes from minimal value to maximal.
+PA        |   patch angle                          |  Angular width of interaction patch in case of patchy spherocylinders.
+PS        |   patch switch                         |  Angular width of interaction patch extension at which interaction strengths goes linearly from minimum to 0.
+LEN       |   particle length                      |  Length of cylindrical section of sherocylinder.
+PARAEPS   |   parallel epsilon                     |  Scaling factor to determine preference of either parallel (x>0) or anti-parallel (x<0) aligment of two patchy spherocylinders interacting via patch.
+PROTATION |   angle between patches                |  In case of sherocylinders with two patches angle between patches.
+ATD2      |   attraction distance of second patch  |  In case of sherocylinders with two patches attraction distance of second patch.
+ATS2      |   attraction switch of second patch    |  In case of sherocylinders with two patches attraction switch of second patch.
+PA2       |   patch angle of second patch          |  In case of sherocylinders with two patches angular width of second patch.
+PAS2      |   attraction switch                    |  In case of sherocylinders with two patches angular width of second patch switch.
+CHAN      |   chirality                            |  In case of chyral particles specifie angle between spherocylinder long axis and axis of patch (so that patch could be tilted with respect to particle).
+
+
+
+\section Sphere Sphere models
+
+\subsection SPN
+- SPN sphere non-attractive, example topology:
 @include top.spn
 
-\section SPA SPA spherocylinder isotropicaly attractive, example topology:
+\subsection SPA
+- SPA sphere isotropicaly attractive, example topology:
 @include top.spa
 
-\section SCN SCN spherocylinder non-attractive - BUGGED, DONT USE
 
-\section SCA SCA spherocylinder isotropicaly attractive - BUGGED, DONT USE
 
-\section PSC PSC spherocylinder with patchy attraction and CPSC spherocylinder with cylindrical patchy attraction
+
+\section SphereCylinder Spherocylinder models
+
+\subsection SCN
+- SCN spherocylinder non-attractive, example topology:
+@include top.scn
+
+\subsection SCA
+- SCA spherocylinder isotropicaly attractive, example topology:
+@include top.sca
+
+
+
+
+\section PatchSphereCylinder Patchy sherocilinder models
+
+\subsection PSC
+- PSC spherocylinder with patchy attraction (patch continue up to sherical caps), example topology:
 @include top.psc
 
-\section CHPSC CHPSC chiral psc and CHCPSC chiral cpsc
+\subsection CHPSC
+- CHPSC chiral version of PSC, example topology:
 @include top.chpsc
 
-\section TPSC TPSC spherocylinder with two patches and TCPSC spherocylinder with two cylindrical patches
+\subsection CPSC
+- CPSC spherocylinder with cylindrical patchy attraction (patch is restricted only to spherocylinder cylindrical body), example topology:
+@include top.cpsc
+
+\subsection CHCPSC
+- CHCPSC chiral version of CPSC, example topology:
+@include top.chcpsc
+
+
+
+\section TwoPatchSphereCylinder Two patch sherocylinder models
+
+\subsection TPSC
+- TPSC two patch version of PSC spherocylinder with one patch, example topology:
 @include top.tpsc
 
-\section TCHPSC TCHPSC chiral tpsc and TCHCPSC chiral tcpsc
+\subsection TCHPSC
+- TCHPSC chiral version of TPSC, example topology:
 @include top.tchpsc
+
+\subsection TCPSC
+- TCPSC two patch version of CPSC spherocylinder with one patch, example topology:
+@include top.tcpsc
+
+\subsection TCHCPSC
+- TCHCPSC chiral version of TCPSC, example topology:
+@include top.tchcpsc
+
 */
 
 /*! \page Topo Topology file format
 - Topology file MUST BE NAMED "top.init"
-                              ==========
-- In a GrandCanonical simulation top.last will be produced when simulation finishes
+- In a GrandCanonical simulation top.last will be produced when simulation finishes.
+
+
+\section Blocks Parameter blocks
+- Parameter blocks starts with block name in square brackets in format "[ block name ]".
+- Each parameter block ends ither with start of next block or end of the file.
+- Comments could be included anywhere in the topology file starting with "\#" where rest of the line after is considered to be comment.
+
+\subsection Type [Type]
+Type section contain definition of particle types with their shape (geotype see \ref Types) and interaction properties.
+Each particle is defined at each line where order of paramerters is strict.
+
+\subsection Molecule [Molecules]
+In molecule section particles could be conected into chains of particles and parameters of whole molecule are defined.
+Every molecule definition starts molecule name (used in parameter block [System]) followd by semicolumn followd by "{".
+\ref Molecule definitions and end with "}".
+Example:
+~~~~~~~~
+A: {
+particles: 1
+}
+~~~~~~~~
+Molecules could have following parameters:
+
+\subsubsection particles particles
+Particles specifie which particle types are present in the molecule.
+Order of particles then define order of given particles in chain.
+
+\subsubsection activity activity
+Activity define given molecule activity used in grandcanonical ensemble.
+Activity is given in [mol/l].
+
+\subsubsection rigid rigid
+Rigid is switch that could turn off movement of internal parts of molecule.
+In other word molecule would move as one rigid block.
+
+\subsubsection bond1 bond1
+Define harmonic bond between nearest neighbouring particles in chain where end of the previus particle is conected to beginning if next particle (importatnt if chains are generated!).
+Distance between particle ends is calculated from centers of podstavy spherical cap (\ref SphereCylinder) or center of sphere (\ref Sphere).
+Harmonic potential is defined by spring constant "k" and equlibrium distance "dist":
+~~~~~~
+bond1:    k     dist
+~~~~~~
+\image html bond1.svg
+
+\subsubsection bond2 bond2
+Harmonic bond between center of mass of second nearest neighbours particles.
+Harmonic potential is defined by spring constant "k" and equlibrium distance "dist":
+~~~~~~
+bond2:    k     dist 
+~~~~~~
+\image html bond2.svg
+
+\subsubsection bondd bondd
+Harmonic bond between nearest neighbours.
+Interaction is calculated between center of top podstavy of hemispherical cap of next particle and point shifted in oposit direction of previous particle directin by dist from particle end.
+Harmonic potential is defined by spring constant "k" and equlibrium distance "dist":
+~~~~~~
+bondd:    k     dist
+~~~~~~
+\image html bondd.svg
+
+\subsubsection bondh bondh
+Harmonic bond between nearest neighbours.
+Bond should behave like hinge, where distance "dist*0.5" define disntance of hinge from particle ends.
+Harmonic potential is defined by spring constant "k" and equlibrium distance "dist":
+~~~~~~
+bondh:    k     dist
+~~~~~~
+\image html bondh.svg
+
+\subsection System [System]
+System parameter section define system composition by number of different molecules present in the system.
+System section is formated such that each line corespond to one molecule type.
+First is name of given molecule (see \ref Molecule) and second is number of given molecules.
+~~~~~~
+[System]
+A 10
+B 20
+X 20
+~~~~~~
+Note: order of molecules in configure.init have to corespond to order of molecules specified in [System] !!!
+
+\subsection Exclude [Exclude]
+This section is used to exclude some attractive interactions between certain interaction patches in the system.
+On each line one pair of excluded patch-patch interactions is given.
+One interaction patch in pair is defined by particle index (see \ref ParticleTypes) and index of patch: 0 for isotropicaly attractive particles or particles with one patch, 1 for second patch in two patch particles.
+Example1:
+~~~~~~
+[Exclude]
+1 0 1 0
+1 1 1 1
+~~~~~~
+This will exclude interaction of two patch spherocylinder where same patches are not able to interact and only interaction between different patches occure.
+
+~~~~~~
+[Exclude]
+1 0 2 0
+~~~~~~
+This will exclude par interaction between two different isotropicaly attractive particles or particles with one patch.
+
+\subsection Exter [Exter]
+This parametr block serve to define external potentials.
+Sofar, only isotropicaly attractive or repulsive walls are possible in z direction parallel to x,y plane.
+External wall is defined by its thickness (corespond to length of box along z direction which is excluded from accesible volume).
+If EPS is nonzero wall is attractive whit same interaction potential like patches on spherocylinders (ATS is similar to patch ATS).
+Example:
+~~~~~~
+[Exter]
+#THICKNESS  EPS  ATS
+5.0         1.0  1.0
+~~~~~~
+
+\subsection Pool [Pool]
+Parameter used for grandcanonical insertion of particle chains.
+Define format of pool file (similar format to config.init) which contain different configurations of given molecule (chain) which are used for GC insertion move.
+Pool section have similar format to \ref System.
+Example:
+~~~~~~
+[Pool]
+A 2
+B 8
+~~~~~~
+Would mean that pool file should contain two configuration of molecule A and afterwards there are 8 configurations of molecule B.
+
+\section TopologyExample Example topology
 @include top.init
+
 */
 
 /*! \page Options Options file format
@@ -149,6 +343,46 @@ Example file:
                              =========
 @include options
 */
+
+
+/*! \page Output Output data formats
+
+\section ConfigLast config.last
+File contain last configuration of the system in same format as \ref Config.
+File is usually used for restarting simulations.
+
+\section StatDat stat.dat
+File contain data about volume change during simulation.
+Example:
+@include stat.dat
+
+\section EnergyDat energy.dat
+File contain data about system energy change and spherocylinder order parameter during simulation.
+Example:
+@include energy.dat
+
+
+\section ClusterDat cluster.dat
+File contain number of clusters in system, their energy and cluster composition.
+Cluster energy is given in parentheses, indecies of particles (corespond to nth particle in \ref Movie or \ref Config), and in square brackets there is particle type index (see \ref ParticleTypes).
+Example:
+@include cluster.dat
+
+\section ClusterStatDat cluster_stat.dat
+File contain information about how many cluster of different sizes are present in the system.
+Where first number after header corespond to cluster size and second to frequncy of given cluster size.
+Example:
+@include cluster_stat.dat
+
+\section Movie movie
+Movie file contain snapshots of the system during simulation at given sweeps.
+Frequency of sampling system configuration could be set by movie in \ref Options.
+Format of movie is similar to configuration file \ref Config.
+To visualise movie file use scripts for VMD input \ref Scripts.
+@include movie
+
+*/
+
 
 /*! \page Example_muVT Grandcanonical ensemble example
 - Grandcanonical ensemble in MoveCreator::muVTMove()

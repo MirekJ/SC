@@ -1,6 +1,6 @@
 [Types]
 #NAME INDEX  GEOTYPE  EPS  SIGMA  ATD    ATS    PA    PS   LEN  PARAEPS  CHAN
-A     1      CHPSC    1.0  1.0    1.122  0.878  30.0  5.0  2.0  0.0      5.0
+A     1      CHCPSC   1.0  1.0    1.122  0.878  30.0  5.0  2.0  0.0      5.0
 [Molecules]
 A: {
 particles:   1

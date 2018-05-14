@@ -1,0 +1,9 @@
+[Types]
+#NAME INDEX  GEOTYPE  EPS  SIGMA  LEN
+A     1      SPN      1.0  1.0    2.0
+[Molecules]
+A: {
+particles:   1
+}
+[System]
+A 38
