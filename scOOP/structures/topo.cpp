@@ -221,7 +221,28 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
 
     for (int i=0;i<MAXT;i++) {
         for (int j=0;j<MAXT;j++) {
-            if( ia_params[i][j].exclude_p1_p1 && ia_params[i][j].exclude_p1_p2 && ia_params[i][j].exclude_p2_p1 && ia_params[i][j].exclude_p2_p2 ) ia_params[i][j].exclude = true;
+            if(
+                    ia_params[i][j].exclude_p1_p1 &&
+                    ia_params[i][j].exclude_p1_p2 &&
+                    ia_params[i][j].exclude_p2_p1 &&
+                    ia_params[i][j].exclude_p2_p2
+                    ) ia_params[i][j].exclude = true;
+            // In case when one of interacting partners are isotropicaly attractive sphere or spherocylinder and their interaction is excluded
+            if(
+                    (
+                        ia_params[i][j].exclude_p1_p1 ||
+                        ia_params[i][j].exclude_p1_p2 ||
+                        ia_params[i][j].exclude_p2_p1 ||
+                        ia_params[i][j].exclude_p2_p2
+                        )
+                    &&
+                    (
+                        ia_params[i][j].geotype[0] == SPA ||
+                        ia_params[i][j].geotype[1] == SPA ||
+                        ia_params[i][j].geotype[0] == SCA ||
+                        ia_params[i][j].geotype[1] == SCA
+                        )
+                     ) ia_params[i][j].exclude = true;
         }
     }
 
