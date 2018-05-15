@@ -813,7 +813,7 @@ int Inicializer::fillTypes(char **pline) {
 
         topo.ia_params[type][type].pdis                  = param[2];
         topo.ia_params[type][type].pdis_x[0]             = topo.ia_params[type][type].pdis; // This is here to propagate values to single patch particles
-         topo.ia_params[type][type].pdisSq_x[0]          = topo.ia_params[type][type].pdis_x[0] * topo.ia_params[type][type].pdis_x[0];
+        topo.ia_params[type][type].pdisSq_x[0]           = topo.ia_params[type][type].pdis_x[0] * topo.ia_params[type][type].pdis_x[0];
         topo.ia_params[type][type].pdisSq                = topo.ia_params[type][type].pdis  * topo.ia_params[type][type].pdis;
 
         topo.ia_params[type][type].pswitch               = param[3];
