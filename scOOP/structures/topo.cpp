@@ -548,7 +548,7 @@ int Topo::fillTypes(char **pline) {
             ia_params[type][type].panglsw[i+2]      = param[12];
             ia_params[type][type].pcangl[i+2]       = cos(param[11]/2.0/180*PI);                 // C1
             ia_params[type][type].pcanglsw[i+2]     = cos((param[11]/2.0+param[12])/180*PI);     // C2
-            ia_params[type][type].pcoshalfi[i+2]    = cos((param[13]/2.0+param[14])/2.0/180*PI);
+            ia_params[type][type].pcoshalfi[i+2]    = cos((param[11]/2.0+param[12])/2.0/180*PI);
             ia_params[type][type].psinhalfi[i+2]    = sqrt(1.0 - ia_params[type][type].pcoshalfi[i+2] * ia_params[type][type].pcoshalfi[i+2]);
         }
         if (param[7] > 0.0 && param[13] > 0.0){
