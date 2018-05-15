@@ -173,10 +173,11 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                     ia_params[i][j].rcutSq_x[3] = ia_params[i][j].rcut_x[3] * ia_params[i][j].rcut_x[3];
 
                     // set maximal value as cut-off distance
-                    for(int p=0; p<4; p++){
-                        if (ia_params[i][j].rcut_x[p] > ia_params[i][j].rcut)
+                    for(int p=0; p<4; p++) {
+                        if (ia_params[i][j].rcut_x[p] > ia_params[i][j].rcut) {
                             ia_params[i][j].rcut = ia_params[i][j].rcut_x[p];
                             ia_params[i][j].rcutSq =  ia_params[i][j].rcutSq_x[p];
+                        }
                     }
 
                     // if not non-attractive == if attractive
