@@ -812,10 +812,14 @@ int Inicializer::fillTypes(char **pline) {
         ){
 
         topo.ia_params[type][type].pdis                  = param[2];
+        topo.ia_params[type][type].pdis_x[0]             = topo.ia_params[type][type].pdis; // This is here to propagate values to single patch particles
+         topo.ia_params[type][type].pdisSq_x[0]          = topo.ia_params[type][type].pdis_x[0] * topo.ia_params[type][type].pdis_x[0];
         topo.ia_params[type][type].pdisSq                = topo.ia_params[type][type].pdis  * topo.ia_params[type][type].pdis;
 
         topo.ia_params[type][type].pswitch               = param[3];
+        topo.ia_params[type][type].pswitch_x[0]          = topo.ia_params[type][type].pswitch; // This is here to propagate values to single patch particles
         topo.ia_params[type][type].pswitchINV            = 1.0/param[3];
+        topo.ia_params[type][type].pswitchINV_x[0]       = 1.0/param[3];
         topo.ia_params[type][type].rcut                  = topo.ia_params[type][type].pswitch+topo.ia_params[type][type].pdis;
         topo.ia_params[type][type].rcutSq                = topo.ia_params[type][type].rcut * topo.ia_params[type][type].rcut;
 
@@ -884,12 +888,13 @@ int Inicializer::fillTypes(char **pline) {
             geotype_i == TCHCPSC
         ) {
 
-            topo.ia_params[type][type].pdis_x[0]         = topo.ia_params[type][type].pdis;
             topo.ia_params[type][type].pdis_x[1]         = AVER(param[9],topo.ia_params[type][type].pdis);
+            topo.ia_params[type][type].pdisSq_x[1]       = topo.ia_params[type][type].pdis_x[1] * topo.ia_params[type][type].pdis_x[1];
             topo.ia_params[type][type].pdis_x[2]         = AVER(topo.ia_params[type][type].pdis, param[9]);
+            topo.ia_params[type][type].pdisSq_x[2]       = topo.ia_params[type][type].pdis_x[2] * topo.ia_params[type][type].pdis_x[2];
             topo.ia_params[type][type].pdis_x[3]         = param[9];
+            topo.ia_params[type][type].pdisSq_x[3]       = topo.ia_params[type][type].pdis_x[3] * topo.ia_params[type][type].pdis_x[3];
 
-            topo.ia_params[type][type].pswitch_x[0]      = topo.ia_params[type][type].pswitch;
             topo.ia_params[type][type].pswitch_x[1]      = AVER(param[10],topo.ia_params[type][type].pswitch);
             topo.ia_params[type][type].pswitch_x[2]      = AVER(topo.ia_params[type][type].pswitch,param[10]);
             topo.ia_params[type][type].pswitch_x[3]      = param[10];
