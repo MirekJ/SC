@@ -130,7 +130,10 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                     ia_params[i][j].pdis = AVER(ia_params[i][i].pdis - ia_params[i][i].rcutwca,
                                                       ia_params[j][j].pdis - ia_params[j][j].rcutwca) + ia_params[i][j].rcutwca;
                     ia_params[i][j].pdisSq = ia_params[i][j].pdis * ia_params[i][j].pdis;
-                    ia_params[i][j].rcut = ia_params[i][j].pswitch+ia_params[i][j].pdis;
+                    if( ia_params[i][j].geotype[0] == SPN || ia_params[i][j].geotype[1] == SPN)
+                        ia_params[i][j].rcut = 0.0;
+                    else
+                        ia_params[i][j].rcut = ia_params[i][j].pswitch+ia_params[i][j].pdis;
                     ia_params[i][j].rcutSq = ia_params[i][j].rcut * ia_params[i][j].rcut;
 
                     // Diferent interaction ranges hack
@@ -171,7 +174,7 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                     ia_params[i][j].rcutSq_x[1] = ia_params[i][j].rcut_x[1] * ia_params[i][j].rcut_x[1];
                     ia_params[i][j].rcutSq_x[2] = ia_params[i][j].rcut_x[2] * ia_params[i][j].rcut_x[2];
                     ia_params[i][j].rcutSq_x[3] = ia_params[i][j].rcut_x[3] * ia_params[i][j].rcut_x[3];
-
+/*
                     // set maximal value as cut-off distance
                     for(int p=0; p<4; p++) {
                         if (ia_params[i][j].rcut_x[p] > ia_params[i][j].rcut) {
@@ -179,7 +182,7 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                             ia_params[i][j].rcutSq =  ia_params[i][j].rcutSq_x[p];
                         }
                     }
-
+*/
                     // if not non-attractive == if attractive
                     if (!((ia_params[i][j].geotype[0] % 10 == 0) || (ia_params[i][j].geotype[1] % 10 == 0))) {
 
