@@ -84,7 +84,6 @@ for name in `ls -d ?h ?l`; do
 done
 cd ..
 
-rm -f a.out SC
 
 #./testMPI
 

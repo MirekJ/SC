@@ -7,7 +7,7 @@
 #   4 = distance of first two particles, 5 = pore around z axis and above CM, 6 = pore around z axis and above 0th particle
 #   7 = number of particles in contact (within distance sqrt(WL_CONTACTS))
 ptype = 3               #  Pressure coupling type (0-anisotropic xyz, 1-isotropic xyz, 2 - isotropic in xy z=const, 3 - isotropic in xy and V=const)
-press = 100              #  Pressure
+press = 100               #  Pressure
 paralpress = 0          #  Parallel pressure for replica exchange
 shave = 1               #  Average number of volume change attempts per sweep (usually 1)
 nequil = 0              #  Number of equilibration sweeps
@@ -16,6 +16,8 @@ nsweeps  = 20000      #  Number of production sweeps
 paramfrq = 0      #  Number of sweeps between order parameter samples
 report   = 0      #  Number of sweeps between statistics reports
 nrepchange = 0          #  Number of sweeps between replica exchanges
+nGrandCanon = 0
+nClustMove = 0
 movie    = 0       #  Number of sweeps between movie frames (0 = no movie)
 chainprob = 0.0         #  Probability of chain move attempts per sweep ( 0.25/number of particles in chain)
 transmx = 0.02         #  Initial maximum displacement
