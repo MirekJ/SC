@@ -1461,10 +1461,62 @@ Vector MoveCreator::clusterCM(vector<int> &cluster) {
 }
 
 void MoveCreator::clusterRotate(vector<int> &cluster, double max_angle) {
-    Vector axis;
-    axis.randomUnitSphere(); /*random axes for rotation*/
-    MoveCreator::clusterRotateD(cluster, max_angle * ran2(), axis);
+    Vector cluscm;
+    double vc,vs;
+    Vector newaxis;
+
+    cluscm = clusterCM(cluster);
+
+    // create rotation quaternion
+    newaxis.randomUnitSphere(); /*random axes for rotation*/
+    vc = cos(max_angle * ran2() );
+    if (ran2() <0.5) vs = sqrt(1.0 - vc*vc);
+    else vs = -sqrt(1.0 - vc*vc); /*randomly choose orientation of direction of rotation clockwise or counterclockwise*/
+
+    Quat newquat(vc, newaxis.x*vs, newaxis.y*vs, newaxis.z*vs);
+
+    //quatsize=sqrt(newquat.w*newquat.w+newquat.x*newquat.x+newquat.y*newquat.y+newquat.z*newquat.z);
+
+    //shift position to geometrical center
+    for(unsigned int i=0; i<cluster.size(); i++) {
+        //shift position to geometrical center
+        conf->pvec[cluster[i]].pos.x -= cluscm.x;
+        conf->pvec[cluster[i]].pos.y -= cluscm.y;
+        conf->pvec[cluster[i]].pos.z -= cluscm.z;
+        //scale things by geo.box not to have them distorted
+        conf->pvec[cluster[i]].pos.x *= conf->geo.box.x;
+        conf->pvec[cluster[i]].pos.y *= conf->geo.box.y;
+        conf->pvec[cluster[i]].pos.z *= conf->geo.box.z;
+        //do rotation
+        conf->pvec[cluster[i]].pos.rotate(newquat);
+        conf->pvec[cluster[i]].dir.rotate(newquat);
+        conf->pvec[cluster[i]].patchdir[0].rotate(newquat);
+        conf->pvec[cluster[i]].patchdir[1].rotate(newquat);
+        conf->pvec[cluster[i]].chdir[0].rotate(newquat);
+        conf->pvec[cluster[i]].chdir[1].rotate(newquat);
+        conf->pvec[cluster[i]].patchsides[0].rotate(newquat);
+        conf->pvec[cluster[i]].patchsides[1].rotate(newquat);
+        conf->pvec[cluster[i]].patchsides[2].rotate(newquat);
+        conf->pvec[cluster[i]].patchsides[3].rotate(newquat);
+        //sclae back
+        conf->pvec[cluster[i]].pos.x /= conf->geo.box.x;
+        conf->pvec[cluster[i]].pos.y /= conf->geo.box.y;
+        conf->pvec[cluster[i]].pos.z /= conf->geo.box.z;
+        //shift positions back
+        conf->pvec[cluster[i]].pos.x += cluscm.x;
+        conf->pvec[cluster[i]].pos.y += cluscm.y;
+        conf->pvec[cluster[i]].pos.z += cluscm.z;
+    }
 }
+
+// This might be better since we haveone function that deterministic rotation of clustur
+// which is more general then random rotation...
+//void MoveCreator::clusterRotate(vector<int> &cluster, double max_angle) {
+//    Vector axis;
+//    axis.randomUnitSphere(); /*random axes for rotation*/
+//    MoveCreator::clusterRotateD(cluster, max_angle * ran2(), axis);
+//}
+
 
 void MoveCreator::clusterRotateD(vector<int> &cluster, double angle, Vector axis) {
     Vector cluscm;
