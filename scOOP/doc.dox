@@ -10,6 +10,7 @@ This manual is divided in the following sections:
 - \subpage Scripts
 - \subpage Versions
 - \subpage theory "Theory behind energy functions"
+- \subpage Tests
 */
 
 //-----------------------------------------------------------
@@ -136,6 +137,7 @@ ATD2      |   attraction distance of second patch  |  In case of sherocylinders 
 ATS2      |   attraction switch of second patch    |  In case of sherocylinders with two patches attraction switch of second patch.
 PA2       |   patch angle of second patch          |  In case of sherocylinders with two patches angular width of second patch.
 PAS2      |   attraction switch                    |  In case of sherocylinders with two patches angular width of second patch switch.
+PARAEPS2  |   parallel epsilon of second patch     |  In case of sherocylinders with two patches scaling factor to determine preference of either parallel or antiparale orientation of second patch.
 CHAN      |   chirality                            |  In case of chyral particles specifie angle between spherocylinder long axis and axis of patch (so that patch could be tilted with respect to particle).
 
 
@@ -443,6 +445,27 @@ Visualize trajectory with vmd
 */
 
 //-----------------------------------------------------------
+
+/*! \page Tests Tests
+To test if program works corectly tests will compare simulation results of current version with reference git version:
+@include reference_version
+
+
+Tests could be found in directory Tests and run via bash script test inside.
+
+    $ cd Tests
+    $ ./test
+
+All results are keept in particular directories for further examination in case of difference between current and reference version (NOK).
+To clean test directories run clean.sh bash script.
+
+    $ cd Tests
+    $ ./clean.sh
+
+*/
+
+//-----------------------------------------------------------
+
 
 /*! \page Versions Versions Log
 
