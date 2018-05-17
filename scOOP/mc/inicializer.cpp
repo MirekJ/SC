@@ -321,9 +321,9 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec) {
 
 void Inicializer::testChains() {
     if (conf->pvec.getChainCount() == 0) {    // no chain -> make the probability of moving them 0
-        if (sim->chainprob > 0)
-            mcout.get() << "No chains... chain move probability set to 0." << endl;
-        sim->chainprob = 0.0;
+//        if (sim->chainprob > 0)
+//            mcout.get() << "No chains... chain move probability set to 0." << endl;
+//        sim->chainprob = 0.0;
     } else {
         for(int i=0; i<conf->pvec.molTypeCount; i++) {
             if(topo.moleculeParam[i].isGrandCanonical() && !topo.moleculeParam[i].isAtomic()) {
