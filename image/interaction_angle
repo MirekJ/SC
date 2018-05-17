@@ -1,0 +1,35 @@
+#!/bin/bash
+
+PATCH_SIZE=10.0
+PATCH_SWITCH=5.0
+DEPTH=5.0
+
+
+gnuplot <<-EOF
+patch_size=${PATCH_SIZE}
+patch_switch=${PATCH_SWITCH}
+depth=${DEPTH}
+
+unset border
+set xzeroaxis
+set yzeroaxis
+set xtics add  (-patch_size*0.5, patch_size*0.5, -(patch_size*0.5+patch_switch), patch_size*0.5+patch_switch)
+set xtics axis out scale 1,8
+set ytics axis
+set yrange [ -1.1*(depth) : 1.1*depth ] noreverse nowriteback
+set xrange [ -1.3*(patch_size*0.5+patch_switch) : 1.3*(patch_size*0.5+patch_switch) ] noreverse nowriteback
+set xlabel 'Angle in degrees'
+set ylabel 'Epsilon'
+
+non(x)=x<-(patch_size*0.5+patch_switch)?0:x<(patch_size*0.5+patch_switch)?1/0:0
+switch(x)=x<-(patch_size*0.5+patch_switch)?0:x<=-(patch_size*0.5)?-(depth/patch_switch)*x-((depth/patch_switch)*((patch_switch+patch_size*0.5))):x<=(patch_size*0.5)?-depth:x<=(patch_size*0.5+patch_switch)?(depth/patch_switch)*x-((depth/patch_switch)*((patch_switch+patch_size*0.5))):0
+depth(x)=x<-patch_size*0.5?1/0:x<patch_size*0.5?-depth:1/0
+
+plot switch(x) title 'Patch switch', non(x) title '', depth(x) title 'Patch size'
+pause mouse keypress
+
+set term png
+set output 'angular.png'
+replot
+
+EOF

@@ -1,0 +1,57 @@
+#!/bin/bash
+
+
+
+# ATRACTION DISTANCE
+ATD=1.346954458
+#ATD=2.
+# ATRACTION SWITCH
+ATS=0.3
+# EPSILON
+EPS=1.3333
+# SIGMA
+SIG=1.2
+
+
+## SCRIPT plot interaction profile for SCP model
+gnuplot <<EOF
+
+D=${SIG}
+e=${EPS}
+
+rep_distance=(2.**(1./6.))*D
+U_rep(x)=(x <= rep_distance)?4*e*(((D/x)**12)-((D/x)**6)+(1./4.))-e:1/0
+
+wc=${ATS}
+rc=${ATD}+wc
+U_atr(x)=(x <= rc-wc)?-e:(x < rc)?-e*(cos((pi*(x-rc-wc))/(2*wc))**2):1/0
+
+U_tot(x)=(x <= rep_distance)?4*e*(((D/x)**12)-((D/x)**6)+(1./4.))-e:(x <= rc-wc )?-e:(x <= rc)?-e*(cos((pi*(x-rc-wc))/(2*wc))**2):0
+
+
+set label sprintf("{/Symbol e} = %7.5f", ${EPS}) at rc, 1.50 font "Courier,20"
+set label sprintf("{/Symbol s} = %7.5f", ${SIG}) at rc, 1.20 font "Courier,20"
+set label sprintf("{/Symbol d} = %7.5f", ${ATD}) at rc, 0.90 font "Courier,20"
+set label sprintf("{/Symbol x} = %7.5f", ${ATS}) at rc, 0.60 font "Courier,20"
+
+
+x_hig=1.5*rc
+x_low=0.8*D
+y_low=-e*1.3
+y_hig=-2.0*(y_low)
+
+set termoption dash
+set termoption enhanced
+
+set xlabel "Distance [nm]"
+set ylabel "Interaction energy [kT]"
+
+plot [x_low:x_hig] [y_low:y_hig] U_rep(x) title "Repulsion part" lt 1 lc 1 lw 4, U_atr(x) title "Atraction part" lt 1 lc 2 lw 4, U_tot(x) title "Whole potential" lt 2 lc 3 lw 2
+
+pause mouse keypress
+
+set terminal pdf enhanced dashed
+set output 'potential.pdf'
+replot
+
+EOF

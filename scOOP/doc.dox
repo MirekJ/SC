@@ -81,6 +81,14 @@ The following is an excerpt from a topology file and the energy function which t
  - ATS is the distance at which the minimum of the potential is reach
 
 \image html U.png "Example of energy function for attractive spheres"
+
+In case of the patch angular dependency, interaction strength is linearly changed from epsilon (EPS) to 0 in range of patch switch (PS).
+
+\image html angular.png
+
+Interaction scaling factor due to (anti)parallel interaction preference (interaction energy is given as product of value from graph and interaction strength):
+
+\image html parallelEps.png
 */
 
 //-----------------------------------------------------------
