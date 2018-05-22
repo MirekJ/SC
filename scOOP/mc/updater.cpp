@@ -57,11 +57,6 @@ void Updater::simulate(long nsweeps, long adjust, long paramfrq, long report) {
     //cout << calcEnergy.allToAll()/(4*sim->temper) << " kT" << endl;
     //cout << calcEnergy.allToAll()/sim->temper << endl;
     //cout << calcEnergy.allToAll() << endl;
-    bool mpi = false;
-#ifdef ENABLE_MPI
-    mpi = true;
-#endif
-    long i;
 
     size_t time = 0;
     size_t temp = 0;
@@ -100,12 +95,22 @@ void Updater::simulate(long nsweeps, long adjust, long paramfrq, long report) {
     initValues();
 
     if(showPairInteractions) {
-        for(int i=0; i< conf->pvec.size(); ++i) {
+        for(unsigned int i=0; i< conf->pvec.size(); ++i) {
             conf->pvec[i].testInit(PSC, i);
         }
         double e;
+        // chain
+        int len = 2;
+        for(unsigned int i=0; i< conf->pvec.size()-1; i += len) {
+            e = calcEnergy.p2p(i,i+1);
+            /*if(e < 1000.0)
+                printf("%.5lf\n", e);
+            else printf("%lf\n", 1000.0);*/
+        }
+        exit(0);
+        //single part
         for(int i=0; i< 1/* conf->pvec.size()-1*/; ++i) {
-            for(int j=i+1; j< conf->pvec.size(); ++j) {
+            for(unsigned int j=i+1; j< conf->pvec.size(); ++j) {
                 e = calcEnergy.p2p(i,j);
                 if(e < 1000.0)
                     printf("%.5lf\n", e);
@@ -392,9 +397,6 @@ void Updater::simulate(long nsweeps, long adjust, long paramfrq, long report) {
 
     move.wl.endWangLandau(files->wloutfile);
 }
-
-
-
 
 
 

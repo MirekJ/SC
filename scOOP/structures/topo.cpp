@@ -2,10 +2,8 @@
 
 #include <cstring>
 
-void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
+void Topo::genParamPairs() {
     int a[2];
-    int len;
-    double length = 0; // The length of a PSC, currently only one is allow, ie implemented
 
     for (int i=0;i<MAXT;i++) {
         for (int j=0;j<MAXT;j++) {
@@ -18,20 +16,6 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                         ia_params[i][j].geotype[k] = ia_params[a[k]][a[k]].geotype[0];
                         ia_params[i][j].len[k]     = ia_params[a[k]][a[k]].len[0];
                         if (ia_params[a[k]][a[k]].len[0] > 0){
-/*
-                            if (length == 0){
-                                length = ia_params[a[k]][a[k]].len[0];
-                            } else {
-                                if (length > 0) {
-                                    if (length != ia_params[a[k]][a[k]].len[0]) {
-                                        fprintf(stderr, "Error: ");
-                                        fprintf(stderr, "Different lengths for spherocylinders have not been implemented yet!\n");
-                                        fprintf(stderr, "\tCheck the length of type %d!\n", a[k]);
-                                        exit(1);
-                                    }
-                                }
-                            }
-*/
                         }
                         ia_params[i][j].half_len[k] = ia_params[a[k]][a[k]].half_len[0];
                         /* Handle angles only, when geotype is a patchs sphero cylinder */
@@ -69,10 +53,8 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                             ia_params[i][j].psinhalfi[k+2] = sqrt(1.0 - ia_params[i][j].pcoshalfi[k+2] * ia_params[i][j].pcoshalfi[k+2]);
                         }
                     }
-                    len = strlen(ia_params[i][i].name);
-                    strncpy(ia_params[i][j].name, ia_params[i][i].name, len + 1);
-                    len = strlen(ia_params[i][i].other_name);
-                    strncpy(ia_params[i][j].other_name, ia_params[i][i].other_name, len + 1);
+                    ia_params[i][j].name = ia_params[i][i].name;
+                    ia_params[i][j].name = ia_params[i][i].name;
 
                     ia_params[i][j].sigma   = AVER(ia_params[i][i].sigma,ia_params[j][j].sigma);
                     ia_params[i][j].sigmaSq   = ia_params[i][j].sigma * ia_params[i][j].sigma;
@@ -216,28 +198,28 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
     }
     for (int i=0;i<MAXT;i++) {
         for (int j=0;j<MAXT;j++) {
-            ia_params[i][j].exclude_p1_p1 = exclusions[i][0][j][0];
-            ia_params[i][j].exclude_p1_p2 = exclusions[i][0][j][1];
-            ia_params[i][j].exclude_p2_p1 = exclusions[i][1][j][0];
-            ia_params[i][j].exclude_p2_p2 = exclusions[i][1][j][1];
+            ia_params[i][j].exclude_x[0] = exclusions[i][0][j][0];
+            ia_params[i][j].exclude_x[1] = exclusions[i][0][j][1];
+            ia_params[i][j].exclude_x[2] = exclusions[i][1][j][0];
+            ia_params[i][j].exclude_x[3] = exclusions[i][1][j][1];
         }
     }
 
     for (int i=0;i<MAXT;i++) {
         for (int j=0;j<MAXT;j++) {
             if(
-                    ia_params[i][j].exclude_p1_p1 &&
-                    ia_params[i][j].exclude_p1_p2 &&
-                    ia_params[i][j].exclude_p2_p1 &&
-                    ia_params[i][j].exclude_p2_p2
+                    ia_params[i][j].exclude_x[0] &&
+                    ia_params[i][j].exclude_x[1] &&
+                    ia_params[i][j].exclude_x[2] &&
+                    ia_params[i][j].exclude_x[3]
                     ) ia_params[i][j].exclude = true;
             // In case when one of interacting partners are isotropicaly attractive sphere or spherocylinder and their interaction is excluded
             if(
                     (
-                        ia_params[i][j].exclude_p1_p1 ||
-                        ia_params[i][j].exclude_p1_p2 ||
-                        ia_params[i][j].exclude_p2_p1 ||
-                        ia_params[i][j].exclude_p2_p2
+                        ia_params[i][j].exclude_x[0] ||
+                        ia_params[i][j].exclude_x[1] ||
+                        ia_params[i][j].exclude_x[2] ||
+                        ia_params[i][j].exclude_x[3]
                         )
                     &&
                     (
@@ -249,8 +231,6 @@ void Topo::genParamPairs(bool exclusions[MAXT][2][MAXT][2]) {
                      ) ia_params[i][j].exclude = true;
         }
     }
-
-    cout << "\n\n\n check pdis and rcutWCA validity - NOT DONE\n\n" << endl;
 }
 
 void Topo::genTopoParams() {
@@ -300,33 +280,7 @@ int Topo::convertGeotype(char *geotype) {
     return 0;
 }
 
-int Topo::fillSystem(char *pline, char *sysnames[], long **sysmoln, char *name) {
-    int i,fields;
-    char zz[STRLEN];
 
-    trim(pline);
-    if (!pline) {
-        fprintf (stderr, "TOPOLOGY ERROR: obtained empty line in fil system.\n\n");
-        return 0;
-    }
-    i=0;
-    while (sysnames[i]!=NULL) i++;
-
-    fields = sscanf(pline, "%s %ld", zz, &(*sysmoln)[i]);
-    sysnames[i] = (char*) malloc(strlen(zz)+1);
-    strcpy(sysnames[i],zz);
-
-    if (fields != 2) {
-        fprintf (stderr, "TOPOLOGY ERROR: failed reading system from (%s).\n\n", pline);
-        return 0;
-    }
-    /*if ((*sysmoln)[i] < 1) {
-            fprintf (stderr, "TOPOLOGY ERROR: cannot have %ld number of molecules.\n\n", (*sysmoln)[i]);
-            return 0;
-        }*/
-    fprintf (stdout, "%s %s %ld\n",name, sysnames[i],(*sysmoln)[i]);
-    return 1;
-}
 
 int Topo::fillTypes(char **pline) {
     int     type,
@@ -378,7 +332,6 @@ int Topo::fillTypes(char **pline) {
 
     cout << "Fields:" << fields << endl;
 
-    fields -= 5; // number of parameter fields => I am too lazy to adjust everywhere below the numbers
     //DEBUG    fprintf (stdout, "Topology read geotype: %ld with parameters fields %d, str:%s and %s in pline %s\n",geotype,fields,geotypestr,paramstr,pline);
 
     geotype_i = convertGeotype(geotype);
@@ -418,12 +371,12 @@ int Topo::fillTypes(char **pline) {
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS CHIRAL_ANGLE" << endl;
         return 0;
     }
-    if (( (geotype_i == TPSC) || (geotype_i == TCPSC) ) && (fields != 15)) {
+    if (( (geotype_i == TPSC) || (geotype_i == TCPSC) ) && (fields != 17)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH PARALLEL_EPS" << endl;
         return 0;
     }
-    if (( (geotype_i == TCHPSC) || (geotype_i == TCHCPSC) )&& ( fields != 16)) {
+    if (( (geotype_i == TCHPSC) || (geotype_i == TCHCPSC) )&& ( fields != 18)) {
         cerr << "TOPOLOGY ERROR: wrong number of parameters for " << geotype << endl;
         cerr << "Parameters are:\n" << "#NAME NUMBER GEOTYPE EPSILON SIGMA ATTRACT_DIST ATTRACT_SWITCH PATCH_ANGLE PATCH_SWITCH SC_LENGTH PARALLEL_EPS  PATCH_ROTATION PATCH_ANGLE PATCH_SWITCH PARALLEL_EPS CHIRAL_ANGLE" << endl;
         return 0;
@@ -434,8 +387,9 @@ int Topo::fillTypes(char **pline) {
         return 0;
     }
 
-    strcpy(ia_params[type][type].name       , name);
-    strcpy(ia_params[type][type].other_name , name);
+    ia_params[type][type].type = type;
+    ia_params[type][type].name = name;
+    ia_params[type][type].other_name = name;
 
     ia_params[type][type].geotype[0]                = geotype_i;
     ia_params[type][type].geotype[1]                = geotype_i;
@@ -468,10 +422,14 @@ int Topo::fillTypes(char **pline) {
         ){
 
         ia_params[type][type].pdis                  = param[2];
+        ia_params[type][type].pdis_x[0]             = ia_params[type][type].pdis; // This is here to propagate values to single patch particles
+        ia_params[type][type].pdisSq_x[0]           = ia_params[type][type].pdis_x[0] * ia_params[type][type].pdis_x[0];
         ia_params[type][type].pdisSq                = ia_params[type][type].pdis  * ia_params[type][type].pdis;
 
         ia_params[type][type].pswitch               = param[3];
+        ia_params[type][type].pswitch_x[0]          = ia_params[type][type].pswitch; // This is here to propagate values to single patch particles
         ia_params[type][type].pswitchINV            = 1.0/param[3];
+        ia_params[type][type].pswitchINV_x[0]       = 1.0/param[3];
         ia_params[type][type].rcut                  = ia_params[type][type].pswitch+ia_params[type][type].pdis;
         ia_params[type][type].rcutSq                = ia_params[type][type].rcut * ia_params[type][type].rcut;
 
@@ -525,7 +483,14 @@ int Topo::fillTypes(char **pline) {
             fprintf(stdout, "| chirality %g ", param[8]);
         }
     }
-
+    if ((fields == 9)||(fields == 10)) {
+        int i;
+        for(i = 0; i < 2; i++){
+            ia_params[type][type].csecpatchrot[i] = cos(param[8] / 360 * PI);
+            ia_params[type][type].ssecpatchrot[i] = sqrt(1 - ia_params[type][type].csecpatchrot[i] * ia_params[type][type].csecpatchrot[i]);
+            //fprintf(stdout, " | %g %g", topo.ia_params[type][type].csecpatchrot[0], topo.ia_params[type][type].ssecpatchrot[0]);
+        }
+    }
     if (
             geotype_i == TPSC       ||
             geotype_i == TCPSC      ||
@@ -533,12 +498,13 @@ int Topo::fillTypes(char **pline) {
             geotype_i == TCHCPSC
         ) {
 
-            ia_params[type][type].pdis_x[0]         = ia_params[type][type].pdis;
             ia_params[type][type].pdis_x[1]         = AVER(param[9],ia_params[type][type].pdis);
+            ia_params[type][type].pdisSq_x[1]       = ia_params[type][type].pdis_x[1] * ia_params[type][type].pdis_x[1];
             ia_params[type][type].pdis_x[2]         = AVER(ia_params[type][type].pdis, param[9]);
+            ia_params[type][type].pdisSq_x[2]       = ia_params[type][type].pdis_x[2] * ia_params[type][type].pdis_x[2];
             ia_params[type][type].pdis_x[3]         = param[9];
+            ia_params[type][type].pdisSq_x[3]       = ia_params[type][type].pdis_x[3] * ia_params[type][type].pdis_x[3];
 
-            ia_params[type][type].pswitch_x[0]      = ia_params[type][type].pswitch;
             ia_params[type][type].pswitch_x[1]      = AVER(param[10],ia_params[type][type].pswitch);
             ia_params[type][type].pswitch_x[2]      = AVER(ia_params[type][type].pswitch,param[10]);
             ia_params[type][type].pswitch_x[3]      = param[10];
@@ -590,12 +556,12 @@ int Topo::fillTypes(char **pline) {
         sqmaxcut = ia_params[type][type].rcutwca;
     if ( ia_params[type][type].rcut > sqmaxcut )
         sqmaxcut = ia_params[type][type].rcut;
-    fprintf(stdout, " \n");
+    mcout.get() << endl;
     DEBUG_INIT("Finished filltypes");
     return 1;
 }
 
-int Topo::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
+int Topo::fillExclusions(char **pline) {
     long num1,num2,num3,num4; //ok so to be able to distinguish between patches we load [EXCLUDE] in format : particle1ID patch1ID[0or1] particle2ID patchID[0or1]
     char *pline1, *pline2;
 
@@ -608,11 +574,11 @@ int Topo::fillExclusions(char **pline, bool exlusions[MAXT][2][MAXT][2]) {
         trim(pline2);
         num4 = strtol(pline2, &pline1, 10);
         if( (num2 > 1 || num2 < 0) || (num4 > 1 || num4 < 0) ){
-            fprintf(stderr, "Error in readin Topology exclusions, patch ID must me 0 or 1\n New [EXCLUDE] formate at each line particle1ID patch1ID[0or1] particle2ID patchID[0or1]\n\n");
+            fprintf(stderr, " \e[91m\e[1mError\e[21m\e[97m in readin Topology exclusions, patch ID must me 0 or 1\n New [EXCLUDE] formate at each line particle1ID patch1ID[0or1] particle2ID patchID[0or1]\n\n");
             return 0;
         }else{
-            exlusions[num1][num2][num3][num4]=true;
-            exlusions[num3][num4][num1][num2]=true;
+            exclusions[num1][num2][num3][num4]=true;
+            exclusions[num3][num4][num1][num2]=true;
         }
     } else {
         fprintf(stderr, "Error in readin Topology exclusions, probably there is not even number of types \n");
@@ -694,8 +660,7 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
         fprintf (stdout, "%d ",molecules[i].type[j]);
 
         if(j==0) {
-            moleculeParam[i].name = (char*) malloc(strlen(molname)+1);
-            strcpy(moleculeParam[i].name, molname);
+            moleculeParam[i].name = molname;
             moleculeParam[i].molType = i;
         }
 
@@ -708,8 +673,8 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
             fields = 3;
         } else{
             fprintf(stdout, "(with switchtype: %ld and delta_mu: %lf)", molecules[i].switchtype[j], molecules[i].delta_mu[j]);
-            moleculeParam[i].switchTypes.push_back(molecules[i].switchtype[j]);
-            moleculeParam[i].deltaMu.push_back(molecules[i].delta_mu[j]);
+            moleculeParam[i].switchTypes[j] = molecules[i].switchtype[j];
+            moleculeParam[i].deltaMu[j] = molecules[i].delta_mu[j];
         }
         if (fields != 3) {
             fprintf (stderr, "TOPOLOGY ERROR: could not read a pacticle.\n\n");
@@ -799,7 +764,7 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
             fprintf (stderr, "TOPOLOGY ERROR: equilibrium angle cannot be negative: %f \n\n",bonddist);
             return 0;
         }
-        moleculeParam[i].angle1c = bondk*DEGTORAD*DEGTORAD; //Multiplication due to fact that constant is applied on difference in radians rather then in degrees
+        moleculeParam[i].angle1c = bondk;
         moleculeParam[i].angle1eq = bonddist*DEGTORAD;
         fprintf (stdout, "angle1: %f %f \n",moleculeParam[i].angle1c,moleculeParam[i].angle1eq);
         return 1;
@@ -820,12 +785,6 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
         return 1;
     }
 
-    if (!strcmp(molcommand,"RIGID")) {
-        moleculeParam[i].rigid = true;
-        fprintf (stdout, "rigid: true \n");
-        return 1;
-    }
-
     // INIT of muVT ensemble
     if (!strcmp(molcommand,"ACTIVITY")) {
         fields = sscanf(molparams, "%le ", &activity);
@@ -841,20 +800,4 @@ int Topo::fillMol(char *molname, char *pline, MolIO *molecules) {
 
 void Topo::topDealoc() {
     delete[] molecules;
-
-    if (sysmoln != NULL) free(sysmoln);
-    sysmoln=NULL;
-
-    if (poolMolNum != NULL) free(poolMolNum);
-    poolMolNum=NULL;
-
-    for (int i=0;i<MAXN;i++) {
-        if ((sysnames[i]) != NULL) free(sysnames[i]);
-        sysnames[i]=NULL;
-    }
-
-    for (int i=0;i<MAXN;i++) {
-        if ((poolNames[i]) != NULL) free(poolNames[i]);
-        poolNames[i]=NULL;
-    }
 }

@@ -34,7 +34,7 @@ mkdir scOOP
 cd scOOP/
 git clone https://github.com/robertvacha/SC
 cd SC/scOOP/
-git checkout $(cat cat reference_version)
+git checkout $(cat reference_version)
 
 rm -f CMakeCache.txt
 rm -rf CMakeFiles/

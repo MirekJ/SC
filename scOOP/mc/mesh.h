@@ -16,8 +16,34 @@ public:
     int dim[2]; ///< \@brief Mesh dimensions
     int* data;  ///< \@brief Mesh data
     int* tmp;   ///< \@brief tempporary list for hole search
+    double alpha_init;
 
-    Mesh() {}
+private:
+    bool verbose;
+    int _hist[200] = {0};
+
+public:
+
+    Mesh(bool verbose) : verbose(verbose) {}
+    ~Mesh() {
+        if(verbose) {
+            ofstream myfile;
+            string file= "pore_distrib";
+            string num = std::to_string(mcout.rank);
+            file.insert(0, num);
+
+            myfile.open (file, std::fstream::app);
+
+            if( myfile.is_open() ) { // histogram of holes
+
+                for(int i=0; i<200; i++){
+                    myfile << _hist[i] << " ";
+                }
+                myfile << endl;
+                myfile.close();
+            }
+        }
+    }
 
     /*..............................................................................*/
     /*........................HOLE IN MESH-MEMBRANE ORDER PARAM.....................*/

@@ -10,6 +10,7 @@
 #include "moleculeparams.h"
 
 #include <cstdio>
+#include <array>
 
 
 class Molecule : public vector<int > {
@@ -87,7 +88,6 @@ public:
         sprintf(configurationInFile, "config.init");
         sprintf(configurationoutfile, "config.last");
         sprintf(optionsfile, "options");
-        sprintf(temperatures, "temperatures");
         sprintf(topologyInFile, "top.init");
         sprintf(topologyOutFile, "top.last");
         sprintf(moviefile, "movie");
@@ -101,7 +101,6 @@ public:
 #ifdef ENABLE_MPI
         initMPI(rank);
 #endif
-
     }
 
     // for MPI
@@ -110,7 +109,6 @@ public:
     char configurationInFile[30];
     char topologyInFile[30];
     char optionsfile[30];
-    char temperatures[30];
     char wlinfile[30];
     // output files
     char configurationoutfile[30];
@@ -162,9 +160,11 @@ public:
 
         // topology out file -> change only for grand  canonical paralel tempering
         sprintf(moviefile, "%dmovie", rank);
+
         if(false /* Multiple walkers Wang-Landau */) {
             sprintf(wloutfile, "%dwl-new.dat", rank);
         }
+
         sprintf(statfile, "%dstat.dat", rank);
         sprintf(clusterfile, "%dcluster.dat", rank);
         sprintf(clusterstatfile, "%dcluster_stat.dat", rank);
@@ -175,120 +175,143 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
 /**
   * @brief Contatins properties and parameters of particle types
   **/
 class Ia_param{
 public:
-    char name[SMSTR];           ///< \brief The name of the particle type
-    char other_name[SMSTR];     ///< \brief The name of the particle type
-    int geotype[2];             ///< \brief The geometrical type:
-                                /// spherocylinder (0-repulsive, 1-isotropic, 2-patchy, 3-cylindrical)
-                                /// or sphere (0-repulsive, 1-isotropic)
-    double sigma;               ///< \brief Repulsion wca
-    double sigmaSq;               ///< \brief Repulsion wca
-    double epsilon;             ///< \brief Repulsion strength
-    double A;                   ///< \brief A = 4 * epsilon * sigma^12
-    double B;                   ///< \brief A = 4 * epsilon * sigma^6
-    double pdis;                ///< \brief Interaction distance of patch
-    double pdis_x[4];           ///< \brief Interaction distance for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1)
-    double pdisSq;              ///< \brief Interaction distance of patch squared not realy used
-    double pdisSq_x[4];         ///< \brief Interaction distance of patch squared for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1)
-    double pswitch;             ///< \brief Switch of distance of patch
-    double pswitch_x[4];        ///< \brief Switch of distance of patch for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1)
-    double pswitchINV;          ///< \brief Inverted Switch of distance of patch
-    double pswitchINV_x[4];     ///< \brief Inverted Switch of distance of patch for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1) not realy used
-    double pangl[4];            ///< \brief angular size of patch as was specifid in input
-    double panglsw[4];          ///< \brief angular size of patchswitch as was specifid in input
-    double pcangl[4];           ///< \brief cosine of half size angle - rotation from patch direction to side
-    double pcanglsw[4];         ///< \brief cosine of half size angle plus switch - rotation from patch direction to side
-    double rcut;                ///< \brief Cutoff for attraction
-    double rcut_x[4];           ///< \brief Cutoff for attraction for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1)
-    double rcutSq;              ///< \brief Cutoff for attraction squared
-    double rcutSq_x[4];         ///< \brief Cutoff for attraction squared for different patch combinations (P0-P0, P1-P0, P0-P1, P1-P1)
-    double rcutwca;             ///< \brief Cutoff for repulsion
-    double rcutwcaSq;           ///< \brief Cutoff for repulsion squared
-    double pcoshalfi[4];        ///< \brief Cosine of half angle going to side of interaction
-    double psinhalfi[4];        ///< \brief Sine of half angle going to side of interaction -useful for quaterion rotation
-    double csecpatchrot[2];     ///< \brief Cosine of Rotation of second patches in 2psc models
-    double ssecpatchrot[2];     ///< \brief Sine of Rotation of second patches in 2psc models
-    double volume;              ///< \brief Volume of particle for geometrical center calculations
-    double pvolscale;           ///< \brief Scale of patch volume size
-    double len[2];              ///< \brief Length of the PSC
-    double half_len[2];         ///< \brief Half length of the PSC
-    double chiral_cos[2];       ///< \brief Coctains the cosinus for the chiral rotation of the patch
-    double chiral_sin[2];       ///< \brief Contains the sinus for the chiral rotation of the patch
-    double parallel[4];         ///< \brief additional epsilon directional interactions parallel(>0), isotpropic(0), or antiparallel(<0), [patch1..patch1_eps_parallel, patch1..patch2_eps_parallel, patch2..patch1_eps_parallel, patch2..patch2_eps_parallel]
+    int type=-1;
+    string name;           ///< \brief The name of the particle type
+    string other_name;     ///< \brief The name of the particle type
+     std::array<int, 2> geotype = {};   ///< \brief The geometrical type:
+                                        /// spherocylinder (0-repulsive, 1-isotropic, 2-patchy, 3-cylindrical)
+                                        /// or sphere (0-repulsive, 1-isotropic)
+    double sigma        = 0.0;  ///< \brief Repulsion wca
+    double sigmaSq      = 0.0;  ///< \brief Repulsion wca
+    double epsilon      = 0.0;  ///< \brief Repulsion strength
+    double A            = 0.0;  ///< \brief A = 4 * epsilon * sigma^12
+    double B            = 0.0;  ///< \brief A = 4 * epsilon * sigma^6
 
-    bool exclude;
-    bool exclude_p1_p1;
-    bool exclude_p1_p2;
-    bool exclude_p2_p1;
-    bool exclude_p2_p2;
-    
-    Ia_param() {
-        for(int k = 0; k < 2; k++){
-            geotype[k] = 0;
-            len[k] = 0.0;
-            half_len[k] = 0.0;
-            chiral_cos[k] = 0.0;
-            chiral_sin[k] = 0.0;
-            csecpatchrot[k] = 0.0;
-            ssecpatchrot[k] = 0.0;
-        }
-        for(int k = 0; k < 4; k++){
-            pangl[k] = 0.0;
-            panglsw[k] = 0.0;
-            pcangl[k] = 0.0;
-            pcanglsw[k] = 0.0;
-            pcoshalfi[k] = 0.0;
-            psinhalfi[k] = 0.0;
-            parallel[k] = 0.0;
-        }
-        sigma = 0.0;
-        epsilon = 0.0;
-        rcutwca = 0.0;
-        pdis = 0.0;
-        pswitch = 0.0;
-        rcut = 0.0;
-        volume = 0.0;
-        pvolscale = 0.0;
+    double pdis         = 0.0;  ///< \brief Maximal interaction distance of patch
+    std::array<double, 4> pdis_x = {}; ///< \brief Maximal interaction distances of patches in two patch particles
+    double pdisSq       = 0.0;  ///< \brief Interaction distance of patch squared
+    std::array<double, 4> pdisSq_x = {}; ///< \brief Maximal interaction distances of patches squared in two patch particles
+    double pswitch      = 0.0;  ///< \brief Switch of distance of patch
+    std::array<double, 4> pswitch_x = {}; ///< \brief Switch of distance of patches in two patch particles
+    double pswitchINV   = 0.0;  ///< \brief Inverted Switch of distance of patch
+    std::array<double, 4> pswitchINV_x = {}; ///< \brief Inverted Switch of distance of patches in two patch particles
 
-        exclude = false;
-        exclude_p1_p1 = false;
-        exclude_p1_p2 = false;
-        exclude_p2_p1 = false;
-        exclude_p2_p2 = false;
+    double rcut         = 0.0;  ///< \brief Cutoff for attraction
+    std::array<double, 4> rcut_x = {}; ///< \brief Cutoff for attraction in two patch particles
+    double rcutSq       = 0.0;  ///< \brief Cutoff for attraction squared
+    std::array<double, 4> rcutSq_x = {}; ///< \brief Cutoff for attraction squared in two patch particles
+    double rcutwca      = 0.0;  ///< \brief Cutoff for repulsion
+    double rcutwcaSq    = 0.0;  ///< \brief Cutoff for repulsion squared
+
+    std::array<double, 4> pcoshalfi     = {};   ///< \brief Cosine of half angle going to side of interaction
+    std::array<double, 4> psinhalfi     = {};   ///< \brief Sine of half angle going to side of interaction -useful for quaterion rotation
+    std::array<double, 2> csecpatchrot  = {};   ///< \brief Cosine of Rotation of second patches in 2psc models
+    std::array<double, 2> ssecpatchrot  = {};   ///< \brief Sine of Rotation of second patches in 2psc models
+
+    std::array<double, 4> pangl         = {};   ///< \brief angular size of patch as was specifid in input
+    std::array<double, 4> panglsw       = {};   ///< \brief angular size of patchswitch as was specifid in input
+    std::array<double, 4> pcangl        = {};   ///< \brief cosine of half size angle - rotation from patch direction to side
+    std::array<double, 4> pcanglsw      = {};   ///< \brief cosine of half size angle plus switch - rotation from patch direction to side
+
+    std::array<double, 2> len           = {};   ///< \brief Length of the PSC
+    std::array<double, 2> half_len      = {};   ///< \brief Half length of the PSC
+    std::array<double, 2> chiral_cos    = {};   ///< \brief Coctains the cosinus for the chiral rotation of the patch
+    std::array<double, 2> chiral_sin    = {};   ///< \brief Contains the sinus for the chiral rotation of the patch
+
+    double patchRot = 0.0;
+    double chiral = 0.0;
+
+    double volume = 0.0;              ///< \brief Volume of particle for geometrical center calculations
+    double pvolscale = 0.0;           ///< \brief Scale of patch volume size
+    std::array<double, 4> parallel = {};            ///< \brief additional epsilon directional interactions parallel(>0), isotpropic(0), or antiparallel(<0), [patch1..patch1_eps_parallel, patch1..patch2_eps_parallel, patch2..patch1_eps_parallel, patch2..patch2_eps_parallel]
+    bool exclude = false;             ///< \brief Exclusion of all attractive interactions between
+    std::array<double, 4> exclude_x = {}; ///< \brief Cutoff for attraction squared in two patch particles
+    //exclude_x[0] == p1_p1
+    //exclude_x[1] == p1_p2
+    //exclude_x[2] == p2_p1
+    //exclude_x[3] == p2_p2
+
+    bool operator==(const Ia_param& o) const {
+        return (this->geotype == o.geotype) && (this->sigma == o.sigma)
+                && (this->sigmaSq == o.sigmaSq) && (this->sigmaSq == o.sigmaSq) && (this->epsilon == o.epsilon)
+                && (this->A == o.A) && (this->B == o.B) && (this->pdis == o.pdis )&& (this->pdis_x == o.pdis_x) && (this->pdisSq == o.pdisSq) && (this->pdisSq_x == o.pdisSq_x)
+                && (this->pswitch == o.pswitch) && (this->pswitch_x == o.pswitch_x) && (this->pswitchINV == o.pswitchINV) && (this->pswitchINV_x == o.pswitchINV_x) && (this->pangl == o.pangl)
+                && (this->panglsw == o.panglsw) && (this->pcangl == o.pcangl) && (this->pcanglsw == o.pcanglsw)
+                && (this->rcut == o.rcut) && (this->rcut_x == o.rcut_x) && (this->rcutSq == o.rcutSq) && (this->rcutSq_x == o.rcutSq_x) && (this->rcutwca == o.rcutwca) && (this->rcutwcaSq == o.rcutwcaSq)
+                && (this->pcoshalfi == o.pcoshalfi) && (this->psinhalfi == o.psinhalfi) && (this->csecpatchrot == o.csecpatchrot)
+                && (this->ssecpatchrot == o.ssecpatchrot) && (this->volume == o.volume) && (this->pvolscale == o.pvolscale)
+                && (this->len == o.len) && (this->half_len == o.half_len) && (this->chiral_cos == o.chiral_cos) && (this->chiral_sin == o.chiral_sin)
+                && (this->parallel == o.parallel) && (this->exclude == o.exclude) && (this->exclude_x == o.exclude_x);
+    }
+
+    string convertGeotype(int type) const {
+        if(type == SCN)     return "SCN";
+        if(type == SCA)     return "SCA";
+        if(type == PSC)     return "PSC";
+        if(type == CPSC)    return "CPSC";
+        if(type == CHPSC)   return "CHPSC";
+        if(type == CHCPSC)  return "CHCPSC";
+        if(type == TPSC)    return "TPSC";
+        if(type == TCPSC)   return "TCPSC";
+        if(type == TCHPSC)  return "TCHPSC";
+        if(type == TCHCPSC) return "TCHCPSC";
+        if(type == SPN)     return "SPN";
+        if(type == SPA)     return "SPA";
+        return string();
+    }
+
+    string toString() {
+        stringstream ss;
+
+        ss << name << " " << type << " " << convertGeotype(geotype[0]) << " " << epsilon << " " << sigma;
+        if(geotype[0] == SPN) return ss.str();
+
+        ss << " " << pdis << " " << pswitch;
+        if(geotype[0] == SPA) return ss.str();
+
+        ss << " " << pangl[0] << " " << panglsw[0] << " " << len[0] << " " << parallel[0];
+        if(geotype[0] == PSC || geotype[0] == CPSC) return ss.str();
+        if(geotype[0] == CHPSC || geotype[0] == CHCPSC) {
+            ss << " " << chiral;
+            return ss.str();
+        }
+
+        ss << " " << patchRot << " " << pangl[2] << " " << panglsw[2] << " " << parallel[1];
+        if(geotype[0] == TPSC || geotype[0] == TCPSC) return ss.str();
+        if(geotype[0] == TCHPSC || geotype[0] == TCHCPSC) {
+            ss << " " << chiral;
+            return ss.str();
+        }
+        return ss.str();
     }
 };
 
-
-
-
 class Exters{
 public:
-    bool exist;                    ///< \brief existence of external potential
-    double thickness;              ///< \brief external wall thicnkess
-    double epsilon;                ///< \brief depth of attraction
-    double attraction;             ///< \brief distance of attraction
-    double sqmaxcut;               ///< \brief distance when nothing can interact
-    Ia_param interactions[MAXT];   ///< \brief Interaction parameters with particle types generated from above params
+    bool exist          = false;    ///< \brief existence of external potential
+    double thickness    = 0.0;      ///< \brief external wall thicnkess
+    double epsilon      = 0.0;      ///< \brief depth of attraction
+    double attraction   = 0.0;      ///< \brief distance of attraction
+    double sqmaxcut     = 0.0;      ///< \brief distance when nothing can interact
+    std::array<Ia_param, MAXT>  interactions;   ///< \brief Interaction parameters with particle types generated from above params
 
-    Exters() {
-        exist = false;
-        thickness = 0.0;
-        epsilon = 0.0;
-        attraction = 0.0;
-        sqmaxcut = 0.0;
+    bool operator==(Exters& o) const {
+        return (this->exist == o.exist) && (this->thickness == o.thickness) && (this->epsilon == o.epsilon)
+                && (this->attraction == o.attraction) && (this->sqmaxcut == o.sqmaxcut) && (this->interactions == o.interactions);
+    }
+
+    string toString() {
+        stringstream ss;
+
+        ss << "[EXTER]" << endl;
+        ss << thickness << " " << epsilon << " " << attraction << endl;
+
+        return ss.str();
     }
 };
 

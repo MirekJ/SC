@@ -4,6 +4,7 @@
 #define PAIRE_H
 
 #include <limits>
+#include <iomanip>
 
 #include "../structures/topo.h"
 #include "../structures/Conf.h"
@@ -70,6 +71,9 @@ public:
     }
 
     Vector minDistSegments(const Vector &segA, const Vector &segB, double halfl1, double halfl2, const Vector &r_cm);
+
+//    inline double atrE(const Ia_param& iaParam, const Vector& p1Dir, const Vector& p2Dir, const Patch& p1P, const Patch& p2P, const Vector& r_cm,
+//                int patchnum1, int patchnum2, double& S1, double& S2, double& T1, double& T2);
 
     inline double atrE(const Ia_param& iaParam, const Vector& p1Dir, const Vector& p2Dir, const Patch& p1P, const Patch& p2P, const Vector& r_cm,
                 int patchnum1, int patchnum2, double& S1, double& S2, double& T1, double& T2){
@@ -205,7 +209,10 @@ public:
 
     bool findIntersectPlaneUni(const Vector& dirA, const Vector& dirB, double halfl,
                                                  const Vector& r_cm, Vector w_vec, double cospatch, double& ti, double& c, double& d) {
-        assert(fabs(w_vec.size() - 1.0) < 1e-13 || !(cout << "w_vec isnt normalised" << endl));
+
+        assert(fabs(dirA.size() - 1.0) < 1e-10 || !(cout << "dirA isnt normalised, " << dirA.size() << " " << dirA.toString() << endl));
+        assert(fabs(dirB.size() - 1.0) < 1e-10 || !(cout << "dirB isnt normalised, " << dirB.size() << " " << dirB.toString() << endl));
+        assert(fabs(w_vec.size() - 1.0) < 1e-10 || !(cout << "w_vec isnt normalised, " << w_vec.size() << " " << w_vec.toString() << endl));
 
         double a;
         Vector d_vec, nplane = vecCrossProduct(dirA, w_vec);
@@ -269,6 +276,8 @@ public:
 };
 
 
+
+
 /**
  * @brief The HarmonicSp class - bond between spheres
  */
@@ -299,7 +308,7 @@ public:
         assert(conlist != nullptr);
         double bondlength, halfl1, halfl2;
         Vector vec1, vec2;
-        int * geotype = topo.ia_params[part1->type][part2->type].geotype;
+        std::array<int, 2> geotype = topo.ia_params[part1->type][part2->type].geotype;
 
         if (part2 == conlist->conlist[1] || part2 == conlist->conlist[0]) {
             if (geotype[0] < SP)
@@ -344,7 +353,7 @@ public:
         double currangle, halfl;
         Vector vec1, vec2;
         double energy = 0.0;
-        int * geotype = topo.ia_params[part1->type][part2->type].geotype;
+        std::array<int, 2> geotype = topo.ia_params[part1->type][part2->type].geotype;
 
         // angle interaction with nearest neighbours -harmonic
         if ((topo.moleculeParam[part1->molType]).angle1c >= 0) {
@@ -373,6 +382,11 @@ public:
                 }
 
                 currangle = acos(DOT(vec1,vec2));
+
+#ifdef NO_REP_IN_CHAIN_ALLSPC
+                if(currangle > 2.09)
+                    return INFINITY;
+#endif
                 energy += harmonicPotential(currangle,topo.moleculeParam[part1->molType].angle1eq,topo.moleculeParam[part1->molType].angle1c);
             }
         }
@@ -382,7 +396,7 @@ public:
             if (part2 == conlist->conlist[0] || part2 == conlist->conlist[1]) {
                 if ( (geotype[0] < SP) && (geotype[1] < SP) ) {
                     // num1 is connected to num2 by tail : // num1 is connected to num2 by head
-                    currangle = ( (part2 == conlist->conlist[0]) ? angleEnergyAngle2( part2, part1 ) : angleEnergyAngle2( part1, part2 ) );
+                    currangle = ( (part2 == conlist->conlist[0]) ? mirAngle2( part2, part1 ) : mirAngle2( part1, part2 ) );
                     energy += harmonicPotential(currangle,topo.moleculeParam[part1->molType].angle2eq,topo.moleculeParam[part1->molType].angle2c);
                 }
             }
@@ -390,19 +404,211 @@ public:
         return energy;
     }
 
-private:
-    inline double angleEnergyAngle2(  const Particle* p1,  const Particle* p2 ){
-        Vector localAxis, localX1, localX2;
-        localAxis = p1->dir.cross(p2->dir);
+    bool test() {
+        Particle a(Vector(14,10,10), Vector(1,0,0), Vector(0,0,1), 0, 0);
+        Particle b(Vector(10,10,10), Vector(1,0,0), Vector(0,0,1), 0, 0);
+        Particle dir = b;
+        Particle dir2 = b;
+        Particle rot = b;
+        Vector axisXY(0,0,1);
 
-        localX1 = p1->dir.cross(localAxis);
-        localX2 = p2->dir.cross(localAxis);
+        double patchLen = 3.0;
+
+        ofstream myfile;
+        myfile.open ("config", ios::out);
+        myfile << "20 20 20" << endl;
+        int angl=90;
+        int ii,jj;
+
+        for(int i = -180; i<=180; i+=30) { // rotating in YZ plane, rotate position as well
+            ii=i;
+            dir = b;
+            if(i>=0)
+                dir.pscRotate(DEGTORAD*i*0.5, TPSC, axisXY, 1);
+            else
+                dir.pscRotate(DEGTORAD*i*0.5, TPSC, axisXY, 3);
+
+            for(int j = -90; j <= 90; j+=30) { // Rotating the second PSC
+                jj=j;
+                dir2 = dir;
+
+                if(j >= 0)
+                    dir2.pscRotate(DEGTORAD*j*0.5, TPSC, dir.patchdir[0].cross(dir.dir), 1);
+                else
+                    dir2.pscRotate(fabs( DEGTORAD*j*0.5 ), TPSC, dir.patchdir[0].cross(dir.dir), 3);
+
+                //cout << i << " " << j << " " << j*i/90.0  << " " << ( j + i*i/(180+j) ) << " " << endl;
+
+                /*if(i >= 0) {
+                    if(i>90) {
+                        ii = i;
+                        if(j >= 0)
+                            // i == 180, j == whatever -> rotate by 180 deg
+                            // i == 90 -> rotate by j*i/90.0 -> 0 to 90 based on j
+                            dir2.pscRotate(DEGTORAD*( j + i*i/(180+j) )*0.5, TPSC, dir2.dir, 1);
+                        else
+                            dir2.pscRotate(DEGTORAD*j*i*0.5/90.0, TPSC, dir2.dir, 3);
+                    } else {
+                        if(j >= 0)
+                            dir2.pscRotate(DEGTORAD*j*i*0.5/90.0, TPSC, dir2.dir, 1);
+                        else
+                            dir2.pscRotate(DEGTORAD*j*i*0.5/90.0, TPSC, dir2.dir, 3);
+                    }
+                } else {
+                    if(i<90) {
+                        ii = i-180;
+                        if(j >= 0)
+                            dir2.pscRotate(fabs(DEGTORAD*j*ii*0.5/90.0 ), TPSC, dir2.dir, 3);
+                        else
+                            dir2.pscRotate(fabs(DEGTORAD*j*ii*0.5/90.0 ), TPSC, dir2.dir, 1);
+                    } else {
+                        if(j >= 0)
+                            dir2.pscRotate(fabs(DEGTORAD*j*i*0.5/90.0 ), TPSC, dir2.dir, 3);
+                        else
+                            dir2.pscRotate(fabs(DEGTORAD*j*i*0.5/90.0 ), TPSC, dir2.dir, 1);
+                    }
+                }*/
+
+
+                dir2.pos.z += patchLen * 0.5 * sin(j*DEGTORAD); // only j contributes to z position
+                dir2.pos.x -= patchLen * 0.5 * cos(j*DEGTORAD) * cos(i*DEGTORAD);
+                dir2.pos.y -= patchLen * 0.5 * cos(j*DEGTORAD) * sin(i*DEGTORAD);
+
+                for(int k=-180; k <= 180; k+=1) { // rotating of patch
+                    rot = dir2;
+                    if(k >= 0)
+                        rot.pscRotate(DEGTORAD*k*0.5, TPSC, dir2.dir, 1);
+                    else
+                        rot.pscRotate(DEGTORAD*k*0.5, TPSC, dir2.dir, 3);
+
+
+                    /*if(test(k*DEGTORAD, robAngle2(&a, &rot))) {
+                        cout << "XY: " << i << "itself: " << j << " corr:" << ( j*(((double)i)/90.0) ) << " rotate: " << k << endl;
+                        cerr << "Rob incorect " << k << " != " << robAngle2(&a, &rot) / DEGTORAD << endl;
+                    }*/
+                    /*if(test(k*DEGTORAD, mirAngle2(&a, &rot))) {
+                        cout << "XY: " << i << "itself: " << j << " rotate: " << k << endl;
+                        cerr << "Mir incorect " << k << " != " << mirAngle2(&a, &rot) / DEGTORAD << endl;
+                    }*/
+                    /*if(test(k*DEGTORAD, angle2(&a, &rot))) {
+                        cout << "XY: " << i << "itself: " << j << " corr:" << ( j*(((double)i)/90.0) ) << " rotate: " << k << endl;
+                        cerr << "Luk incorect " << k << " != " << angle2(&a, &rot) / DEGTORAD << endl;
+                    }*/
+
+                    //cout << "XY: " << i << "itself: " << j << " rotate: " << k << endl;
+                    //cout << "Mir " << mirAngle2(&a, &rot) / DEGTORAD << endl;
+
+                    ii=i;
+                    jj=j;
+
+                    if(angl > 90) {
+                        angl -= abs(angl-180);
+                    if(ii > 0)
+                        ii = abs(ii-180);
+                    else
+                        ii = -abs(ii+180);
+                    }
+
+                    if( !test(0*DEGTORAD, mirAngle2(&a, &rot)) ) {
+                        myfile << a.print() << endl;
+                        myfile << rot.print() << endl;
+                    }
+
+                    //if( (ii*ii+jj*jj < angl*angl && ii*ii+jj*jj > (angl*angl - angl) ) || (ii==0 && abs(jj)==angl) || (jj==0 && abs(ii)==angl) ) {
+                        //myfile << a.print() << endl;
+                        //myfile << rot.print() << endl;
+                    //}
+                }
+            }
+        }
+        exit(0);
+    }
+
+private:
+    inline double mirAngle2( const Particle* p1, const Particle* p2 ) const {
+        /*
+         * If part1 and part 2 parallel:
+         * localAxis = (0,0,0)
+         * localX1 = localX2 = (0,0,0)
+         * */
+        Vector localAxis = p1->dir.cross(p2->dir);
+
+        if( localAxis.x == 0.0 && localAxis.y == 0.0 && localAxis.z == 0.0 ) {
+            return acos( p1->patchdir[0].dot(p2->patchdir[0]) );
+        }
+
+        Vector localX1 = p1->dir.cross(localAxis);
+        Vector localX2 = p2->dir.cross(localAxis);
+
         double  v1x = localX1.dot(p1->patchdir[0]),
                 v1y = localAxis.dot(p1->patchdir[0]),
                 v2x = localX2.dot(p2->patchdir[0]),
                 v2y = localAxis.dot(p2->patchdir[0]);
 
-        return acos( (v1x * v2x + v1y * v2y) / ( sqrt( (v1x * v1x + v1y * v1y) * (v2x * v2x + v2y * v2y) )));//angle is in radians
+        return acos( (v1x * v2x + v1y * v2y) / ( sqrt( (v1x * v1x + v1y * v1y) * (v2x * v2x + v2y * v2y) ) ) );//angle is in radians
+    }
+
+    inline double robAngle2( const Particle* p1, const Particle* p2 ) const {
+        return acos( p2->patchdir[0].dot(p1->patchdir[0]) - p2->dir.dot(p1->patchdir[0]) );
+    }
+
+    /**
+     * @brief angle2 - Calculate angle between 2 patches of partile p1 and particle p2
+     *
+     * Notation: p1->dir = d1
+     *           p2->dir = d2
+     *           p1->patchdir[0] = p1
+     *           p2->patchdir[0] = p2
+     *
+     * p1 x d2 => calculate the angle of p2 towards this plane
+     * second => need plane perpendicular to (p1 x d2) for angle determination
+     *
+     * corr - based on d1 x d2 angle in plane p1 and plane (d1 x p1),
+     *        we determine a shift of 0deg angle from the above mentioned planes
+     *
+     * @param p1
+     * @param p2
+     * @return
+     */
+    inline double angle2( const Particle* p1, const Particle* p2 ) const {
+
+        Vector p1Cd2,second; // Plane normal Vectors for Patch angle calc
+        double cosP1D2;      // size of d1
+        double cosD1D2;      // size of d2
+        double corr;         // correction angle for 0deg patch
+        double acos_sp2;
+        double dotsp2;
+
+        cosD1D2 = p1->dir.dot(p2->dir); // d2 projection in d1 -> size cos Alpha
+
+        if(cosD1D2 == 1.0) // parallel particles -> return dir between the patches
+            return acos( p2->patchdir[0].dot(p1->patchdir[0]) );
+
+        cosP1D2 = p2->dir.dot(p1->patchdir[0]); // size of d2 projection in p1 -> cos Phi
+
+        if(cosP1D2 == 0.0) {
+            cosD1D2 = 1;
+            corr = 0;
+        } else {
+            cosD1D2 = cosD1D2 / sqrt(1-cosP1D2*cosP1D2);
+            corr = acos(cosD1D2) * (acos(cosP1D2) - PIH) * (1.0/PIH) ;
+        }
+
+        p1Cd2 = p2->dir.cross(p1->patchdir[0]);
+        p1Cd2.normalise();
+        second = p1Cd2.cross(p2->dir);
+        second.normalise();
+
+        dotsp2 = second.dot(p2->patchdir[0]);
+
+        if( dotsp2 >= 0 ) // acos( dotsp2 ) < 90*DEGTORAD
+            return acos( dotsp2 ) - corr;
+        else
+            return acos( p1Cd2.dot(p2->patchdir[0]) ) + 90*DEGTORAD - corr;
+    }
+
+    bool test(double a, double b) {
+        return fabs(a - b) > 1e-1;
     }
 };
 
@@ -443,6 +649,13 @@ public:
             return 0.0;
         else
             return iaParam.epsilon + iaParam.A * pow(distSq, -6)- iaParam.B * pow(distSq, -3);
+    }
+};
+
+class NoRepulsion : public EPotential {
+public:
+    double operator() (double distSq, const Ia_param& iaParam) override {
+        return 0.0;
     }
 };
 
@@ -1179,6 +1392,9 @@ public:
         if(conlist != nullptr) {
             abE = bondE(dist, part1, part2, conlist);
             abE += angleE(dist, part1, part2, conlist);
+#ifdef NO_REP_IN_CHAIN_ALLSPC
+            return abE;
+#endif
         }
 
         distSq = patchE.closestDist(r_cm, part1->dir, part2->dir, topo.ia_params[part1->type][part2->type]);
@@ -1186,7 +1402,7 @@ public:
 
         if ( ( distSq > topo.ia_params[part1->type][part2->type].rcutSq ) ||
              (topo.ia_params[part1->type][part2->type].epsilon == 0.0 ) ||
-             topo.ia_params[part1->type][part2->type].exclude) { // cutoff or not interacting
+             topo.ia_params[part1->type][part2->type].exclude ) { // cutoff or not interacting
             atrenergy = 0.0;
 //        This par would remove inter chain interaction ... I reverted it due to tests ...
 //        }else if(conlist != nullptr && (conlist->conlist[0] == part2 || conlist->conlist[1] == part2)){
@@ -1195,7 +1411,7 @@ public:
             bool firstCH, secondCH, firstT, secondT;
             patchE.getGeoTypes(topo.ia_params[part1->type][part2->type], firstCH, secondCH, firstT, secondT);
 
-            if(topo.ia_params[part1->type][part2->type].exclude_p1_p1 == false){
+            if(topo.ia_params[part1->type][part2->type].exclude_x[0] == false){
                 atrenergy = patchE( topo.ia_params[part1->type][part2->type],
                                     (firstCH)  ? part1->chdir[0] : part1->dir,
                                     (secondCH) ? part2->chdir[0] : part2->dir,
@@ -1206,7 +1422,7 @@ public:
             }
 
             // addition of interaction of second patches
-            if(firstT && (topo.ia_params[part1->type][part2->type].exclude_p2_p1 == false) ) { // part1 has second patch
+            if(firstT && (topo.ia_params[part1->type][part2->type].exclude_x[1] == false) ) { // part1 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[1] : part1->dir,
                         (secondCH) ? part2->chdir[0] : part2->dir,
@@ -1214,7 +1430,7 @@ public:
                     Patch(part2->patchdir[0], part2->patchsides[0], part2->patchsides[1]), r_cm, 1,0);
             }
 
-            if(secondT && (topo.ia_params[part1->type][part2->type].exclude_p1_p2 == false) ) { // part2 has second patch
+            if(secondT && (topo.ia_params[part1->type][part2->type].exclude_x[2] == false) ) { // part2 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[0] : part1->dir,
                         (secondCH) ? part2->chdir[1] : part2->dir,
@@ -1222,7 +1438,7 @@ public:
                     Patch(part2->patchdir[1], part2->patchsides[2], part2->patchsides[3]), r_cm, 0,1);
             }
 
-            if(firstT && secondT && (topo.ia_params[part1->type][part2->type].exclude_p2_p2 == false)) { // part1 and part2 has second patch
+            if(firstT && secondT && (topo.ia_params[part1->type][part2->type].exclude_x[3] == false)) { // part1 and part2 has second patch
                 atrenergy += patchE(topo.ia_params[part1->type][part2->type],
                         (firstCH) ? part1->chdir[1] : part1->dir,
                         (secondCH) ? part2->chdir[1] : part2->dir,
@@ -1256,6 +1472,9 @@ public:
         return abE + repenergy + atrenergy;
     }
 };
+
+
+
 
 class PairE {
     EBasic* eFce[MAXT][MAXT];

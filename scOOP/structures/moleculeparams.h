@@ -3,6 +3,7 @@
 
 #include "macros.h"
 #include <cassert>
+#include <array>
 
 /**
  * @brief Parameters for interactions of molecules(mainly inner interaction in chains), each molType has a MoleculeParams instance
@@ -10,40 +11,84 @@
 class MoleculeParams
 {
 public:
-    char * name;        ///< \brief name of the molecule
-    int molType;
+    static const int maxChainParticles = 100;
 
-    double bond1eq;     ///< \brief Equilibrium distance of harmonic bond between nearest neighbours
-    double bond1c;      ///< \brief Spring constant for harmonic bond between nearest neighbours
+    string name;        ///< \brief name of the molecule
+    int molType = -1;
 
-    double bond2eq;     ///< \brief Equilibrium distance of harmonic bond between second nearest neighbours
-    double bond2c;      ///< \brief Spring constant for harmonic bond between second nearest neighbours
+    double bond1eq  = -1.0;     ///< \brief Equilibrium distance of harmonic bond between nearest neighbours
+    double bond1c   = -1.0;     ///< \brief Spring constant for harmonic bond between nearest neighbours
+    double bond2eq  = -1.0;     ///< \brief Equilibrium distance of harmonic bond between second nearest neighbours
+    double bond2c   = -1.0;     ///< \brief Spring constant for harmonic bond between second nearest neighbours
+    double bonddeq  = -1.0;     ///< \brief Equilibrium distance of directional harmonic bond between the nearest neighbours
+    double bonddc   = -1.0;     ///< \brief Spring constant for directional harmonic bond between the nearest neighbours
+    double bondheq  = -1.0;     ///< \brief Equilibrium distance of hinge like harmonic bond between the nearest neighbours
+    double bondhc   = -1.0;     ///< \brief Spring constant for hinge like harmonic bond between the nearest neighbours
 
-    double bonddeq;     ///< \brief Equilibrium distance of directional harmonic bond between the nearest neighbours
-    double bonddc;      ///< \brief Spring constant for directional harmonic bond between the nearest neighbours
+    double angle1eq = -1.0;     ///< \brief Equilibrium angle between two spherocylinders -neerest neighbours
+    double angle1c  = -1.0;     ///< \brief Spring constant angle between two spherocylinders -nearest neighbours
+    double angle2eq = -1.0;     ///< \brief Equilibrium angle between two spherocylinder patches -nearest neighbours
+    double angle2c  = -1.0;     ///< \brief Spring constant for angle between two spherocylinder patches -nearest neighbours
 
-    double bondheq;     ///< \brief Equilibrium distance of hinge like harmonic bond between the nearest neighbours
-    double bondhc;      ///< \brief Spring constant for hinge like harmonic bond between the nearest neighbours
+    bool   rigid    = false;    ///< \brief If true chain is always moved as whole without any moves that migh change its internal configuration
 
-    double angle1eq;    ///< \brief Equilibrium angle between two spherocylinders -neerest neighbours
-    double angle1c;     ///< \brief Spring constant angle between two spherocylinders -nearest neighbours
+    double activity = -1.0;                ///< \brief activity, specific to each molecule type
+    double chemPot  = -1.0;                 ///< \brief mu + 3*ln(A), specific to each type
 
-    double angle2eq;    ///< \brief Equilibrium angle between two spherocylinder patches -nearest neighbours
-    double angle2c;     ///< \brief Spring constant for angle between two spherocylinder patches -nearest neighbours
-
-    bool rigid;         ///< \brief If true chain is always moved as whole without any moves that migh change its internal configuration
-
-    double activity;                ///< \brief activity, specific to each molecule type
-    double chemPot;                 ///< \brief mu + 3*ln(A), specific to each type
-    std::vector<int> particleTypes;    ///< \brief 0..40 particle type
-    std::vector<int> switchTypes;
-    std::vector<double> deltaMu;
-    int switchCount;        ///< \brief count of particles with defined switchtype
+    std::vector<int> particleTypes = {};    ///< \brief 0..40 particle type
+    std::array<int, maxChainParticles> switchTypes = {};
+    std::array<double, maxChainParticles> deltaMu = {};
+    int switchCount = 0;        ///< \brief count of particles with defined switchtype
 
 public:
-    MoleculeParams() : name(NULL), bond1eq(-1.0), bond1c(-1.0), bond2eq(-1.0), bond2c(-1.0), bonddeq(-1), bonddc(-1.0), bondheq(-1.0), bondhc(-1.0),
-                       angle1eq(-1.0), angle1c(-1.0), angle2eq(-1.0), angle2c(-1.0), rigid(false), activity(-1.0), chemPot(-1.0) {
-        particleTypes.reserve(MAXCHL);
+    MoleculeParams() { particleTypes.reserve(MAXCHL); switchTypes.fill(-1); }
+
+    string toString() {
+        stringstream ss;
+
+        ss << name << ":{" << endl;
+        ss << ((bond1c == -1.0) ? string() : ( string("bond1: ")+to_string(bond1c)+string(" ")+to_string(bond1eq)+string("\n")) );
+        ss << ((bond2c == -1.0) ? string() : ( string("bond2: ")+to_string(bond2c)+string(" ")+to_string(bond2eq)+string("\n")) );
+        ss << ((bonddc == -1.0) ? string() : ( string("bondd: ")+to_string(bonddc)+string(" ")+to_string(bonddeq)+string("\n")) );
+        ss << ((bondhc == -1.0) ? string() : ( string("bondh: ")+to_string(bondhc)+string(" ")+to_string(bondheq)+string("\n")) );
+
+        ss << ((angle1c == -1.0) ? string() : ( string("bond1: ")+to_string(angle1c)+string(" ")+to_string(angle1eq))+string("\n") );
+        ss << ((angle2c == -1.0) ? string() : ( string("bond1: ")+to_string(angle2c)+string(" ")+to_string(angle2eq))+string("\n") );
+
+        ss << ((activity == -1.0) ? string() : ( string("activity: ")+to_string(activity))+string("\n"));
+        ss << ((rigid    == false) ? string() : string("rigid: true")+string("\n"));
+        for(unsigned int j=0; j < particleTypes.size(); ++j) {
+            ss << "particles: " << particleTypes[j]
+                 << " " << ( ( switchTypes[j] == -1 ) ? string() : ( std::to_string(switchTypes[j]) ) )
+                 << " " << ( ( deltaMu[j] == 0.0 ) ? string() : (std::to_string(deltaMu[j]) ) )
+                 << endl;
+        }
+        ss << "}";
+
+        return ss.str();
+    }
+
+    /**
+     * @brief operator ==
+     * @param o
+     * @return
+     */
+    bool operator==(const MoleculeParams& o) const {
+        //
+        // operator== on std::vector: Compares the contents of two containers.
+        //   Checks if the contents of lhs and rhs are equal, that is, whether lhs.size() == rhs.size() and each element in lhs has equivalent element in rhs at the same position.
+        //
+        return     (this->particleTypes == o.particleTypes) && (this->switchTypes == o.switchTypes)
+                && (this->deltaMu       == o.deltaMu      ) && (this->molType     == o.molType)
+                && (this->bond1eq       == o.bond1eq      ) && (this->bond1c      == o.bond1c)
+                && (this->bond2eq       == o.bond2eq      ) && (this->bond2c      == o.bond2c)
+                && (this->bonddeq       == o.bonddeq      ) && (this->bonddc      == o.bonddc)
+                && (this->bondheq       == o.bondheq      ) && (this->bondhc      == o.bondhc)
+                && (this->angle1eq      == o.angle1eq     ) && (this->angle1c     == o.angle1c)
+                && (this->angle2eq      == o.angle2eq     ) && (this->angle2c     == o.angle2c)
+                && (this->activity      == o.activity     ) && (this->chemPot     == o.chemPot)
+                && (this->rigid         == o.rigid        ) && (this->switchCount == o.switchCount)
+                && (this->name          == o.name);
     }
 
     /**

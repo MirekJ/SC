@@ -57,8 +57,6 @@ int main(int argc, char** argv) {
     int rank=0, procs=1;
 
 #ifdef ENABLE_MPI
-    cout << "MPI SIMULATION" << endl;
-
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &procs );
     MPI_Comm_rank(MPI_COMM_WORLD, &rank );
@@ -72,8 +70,7 @@ int main(int argc, char** argv) {
     cout << "\n!!! Extra hydrophobic interaction in e_cpsc_cpsc added, strenght: " << E_ISO << endl;
 #endif
 
-
-    if(argc==2) {
+    if(argc==2) { // Future testing done by arguments given to executable
         string str1(argv[1]);
     }
 
@@ -84,13 +81,26 @@ int main(int argc, char** argv) {
     FileNames files(rank);
     Conf conf;                // Should contain fast changing particle and box(?) information
     Sim sim(&conf, &files, rank, procs);                  // Should contain the simulation options.
+    topo = Topo( (sim.switchprob > 0.0), (sim.nGrandCanon != 0), &files);
 
     /********************************************************/
     /*                  INITIALIZATION                      */
     /********************************************************/
 
     Inicializer init(&sim, &conf, &files);
-    init.initTop(); // here particleStore filled in setParticleParams
+    init.poolConfig = topo.poolConfig;
+    init.setParticlesParams(); // sets dummy pool and pvec
+    init.initGroupLists(); // Only happens in Pvec and Pool, needs to happen after setPartParams
+
+    conf.sysvolume = 0;
+    for (unsigned int i=0; i<conf.pvec.size(); i++)
+        conf.sysvolume += topo.ia_params[conf.pvec[i].type][conf.pvec[i].type].volume;
+
+
+#ifdef ENABLE_MPI  // Parallel tempering check
+    // probability to switch replicas = exp ( -0.5 * dT*dT * N / (1 + dT) )
+    mcout.get() << "Probability to switch replicas is roughly: " << exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) << endl;
+#endif
     init.testChains(); // if no chains -> move probability of chains 0
 
     mcout.get() << "\nReading configuration...\n";
@@ -100,7 +110,7 @@ int main(int argc, char** argv) {
             fprintf (stderr, "\nERROR: Could not open %s file.\n\n", files.configurationPool);
             exit (1);
         }
-        if(!init.initConfig(&infile, conf.pool))
+        if(!init.initConfig(&infile, conf.pool, false))
             exit(1);
         fclose (infile);
     }
@@ -128,7 +138,7 @@ int main(int argc, char** argv) {
     // count grand canonically active species
     for(int i=0; i<conf.pvec.molTypeCount; i++) {
         if(topo.moleculeParam[i].activity != -1.0)
-            topo.gcSpecies++;
+            topo.gcSpeciesCount++;
     }
 
     //
@@ -152,7 +162,7 @@ int main(int argc, char** argv) {
     if(sim.nGrandCanon == 0) {
         bool test = false;
         for(int i=0; i < MAXMT; ++i) {
-            if( topo.moleculeParam[i].name != NULL && topo.moleculeParam[i].activity != -1 ) {
+            if( !topo.moleculeParam[i].name.empty() && topo.moleculeParam[i].activity != -1 ) {
                 test = true; // we have a gc active species
                 break;
             }
@@ -335,45 +345,21 @@ int main(int argc, char** argv) {
     fclose (outfile);
 
     if(sim.nGrandCanon != 0) {
-        FILE* inFile = fopen(files.topologyInFile, "r");
-        outfile = fopen(files.topologyOutFile, "w");
+        std::fstream topOut(files.topologyOutFile, std::fstream::out);
 
-        char line[128];
-
-        while(strncmp(line, "[System]", 8) != 0) {
-            if(fgets(line,127, inFile) == NULL ) {
-                printf("Error writing Topology [System] not found\n");
-                break;
-            }
-            fputs(line, outfile);
+        if(topOut.is_open())
+            topOut << topo.toString();
+        else {
+            cerr << "Could not open file: " << files.topologyOutFile << endl;
+            cout << topo.toString() << endl;
         }
-        for(int i=0; i < conf.pvec.molTypeCount; i++)
-            fprintf(outfile, "%s %d\n", topo.moleculeParam[i].name, conf.pvec.molCountOfType(i));
 
-        fclose (outfile);
-        fclose (inFile);
+        topOut.close();
     }
-
-    /// For testing the pairlist
-    //gen_pairlist(&topo, &sim, &conf);
-    //FILE * fpairlist;
-    //fpairlist = fopen("pairlist.dat", "w");
-    //print_pairlist(fpairlist, &sim, &topo);
-    //fclose(fpairlist);
-    //printf("sqmaxcut = %f\n", topo.sqmaxcut);
-
-    /// For testing the cluster algorithm
-    //gen_clusterlist(&topo, &sim, &conf);
-    //print_clusterlist(stdout, TRUE, &topo, &sim, &conf);
-    //sort_clusterlist(&topo, &sim);
-    //print_clusters(stdout, TRUE, &sim);
-    //print_clusterstat(stdout, TRUE, &sim);
 
     /********************************************************/
     /*                   MEMORY DEALLOC                     */
     /********************************************************/
-
-    //sim.~Sim(); topo.~Topo(); conf.~Conf(); // note: called automatically at end of main
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

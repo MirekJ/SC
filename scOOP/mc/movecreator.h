@@ -27,7 +27,7 @@ private:
     Sim* sim;                  // Should contain the simulation options.
     Conf* conf;                // Should contain fast changing particle and box(?) information  
 
-    std::vector<Particle > insert;  // insert vector for muVt -> malloc() error when in muVTmove()
+    ParticleVector insert;  // insert vector for muVt -> malloc() error when in muVTmove()
     Particle chorig[MAXCHL];
 
 public:
@@ -57,6 +57,12 @@ public:
      */
     double clusterMoveGeom(long target);
 
+    /**
+     * @brief Special cluster move in x-y plane
+     * This move select cluster such that all particles that are conected via first patch in TCPSC are rotated along Z axis.
+     * @param
+     * @return
+     */
     double moveTetramer2D(long target);
 
     double printClustersConf();
@@ -157,11 +163,11 @@ private:
      */
     void clusterRotate(vector<int >& cluster, double max_angle);
 
-    void clusterRotate(vector<Particle >& cluster, double max_angle);
+    // this are suposed to be more general fuctions for cluster rotation ... where u can specifie rotation axis
     void clusterRotate(vector<Particle> &cluster, double angle, Vector axis);
-
     void clusterRotateD(vector<int> &cluster, double angle, Vector axis);
 
+    void clusterRotate(vector<Particle >& cluster, double max_angle);
 
     inline Vector clusterCM(vector<int >& cluster);
 

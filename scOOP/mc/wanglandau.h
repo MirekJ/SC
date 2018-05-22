@@ -26,7 +26,7 @@ class WangLandau
 public:
     const int mpirank;
 
-    WangLandau(Conf* conf, Sim* sim) : conf(conf), mpirank(sim->mpirank) {
+    WangLandau(Conf* conf, Sim* sim) : conf(conf), mpirank(sim->mpirank), mesh(true), origmesh(false) {
         wlmtype = sim->wlmtype;
         wlm[0] = sim->wlm[0];
         wlm[1] = sim->wlm[1];
@@ -181,8 +181,8 @@ public:
                 case 5:     poreZCM(wli, radiusholemax_orig);   break;
                 case 6:     poreZ0(wli, radiusholemax_orig);    break;
                 case 7:     partInContact(wli);                 break;
-                case 8:     boxSize_x(wli);                      break;
-                case 9:     boxSize_y(wli);                      break;
+                case 8:     boxSize_x(wli);                     break;
+                case 9:     boxSize_y(wli);                     break;
                 default:    def(wli);                           break;
             }
             if ( (neworder[wli] < 0) || (neworder[wli] >= length[wli]) ) reject = 1;
@@ -364,11 +364,6 @@ private:
         }
     }
 
-    inline void partInContact(int wli) {
-        partincontactold = partincontact;
-        neworder[wli] = contParticlesAll(wli);
-    }
-
     // case:8
     inline void boxSize_x(int wli){
             neworder[wli] = ceil( (conf->geo.box.x - minorder[wli]) / dorder[wli]);
@@ -378,6 +373,12 @@ private:
     inline void boxSize_y(int wli){
             neworder[wli] = ceil( (conf->geo.box.y - minorder[wli]) / dorder[wli]);
     }
+
+    inline void partInContact(int wli) {
+        partincontactold = partincontact;
+        neworder[wli] = contParticlesAll(wli);
+    }
+
 
     inline void def(int wli) {
         neworder[wli] = currorder[wli];

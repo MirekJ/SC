@@ -387,11 +387,6 @@ private:
 
         //parallel tempering
 #ifdef ENABLE_MPI
-        if ( (temper != paraltemper) && (mpinprocs <2) ) {
-            cerr << "ERROR: Paralllel tempering at single core does not work.\n" << endl;
-            exit(1);
-        }
-
         //TEMPERATURE READING/ASSIGN
         if (mpirank == 0){                                                          //reading and asigment of temperatures is done only in root process
             FILE *temperFile;
