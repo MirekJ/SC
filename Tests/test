@@ -29,12 +29,13 @@ cd ../Tests/
 
 echo ""
 echo "Building comparison version..."
+COMPARE_VERSION=$(cat reference_version)
 
-mkdir scOOP
-cd scOOP/
+mkdir COMPARISON_VERSION
+cd COMPARISON_VERSION/
 git clone https://github.com/robertvacha/SC
 cd SC/scOOP/
-git checkout $(cat reference_version)
+git checkout $COMPARE_VERSION
 
 rm -f CMakeCache.txt
 rm -rf CMakeFiles/

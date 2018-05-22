@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -rf ./scOOP ./SC ./SC_reference
+rm -rf ./COMPARISON_VERSION ./SC ./SC_reference
 
 for name in `ls -d test_*`; do
     cd $name/new
