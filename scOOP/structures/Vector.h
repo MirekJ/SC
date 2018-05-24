@@ -50,6 +50,15 @@ public:
     }
 
     /**
+     * @brief Return a square of Vector norm
+     * Usefull if only distances are compared ... since sqrt operation could be saved
+     * @return
+     */
+    inline double sizeSq() const {
+        return pow(this->x,2) + pow(this->y,2) + pow(this->z,2);
+    }
+
+    /**
      * @brief normalise Normalise a vector to have unit length.  For speed during heavy use, it is
        not checked that the supplied vector has non-zero length.
      */
