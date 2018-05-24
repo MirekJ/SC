@@ -405,42 +405,9 @@ public:
      * @param outfile
      */
     void draw(FILE *outfile) {
-        //fprintf (outfile, "%15.8e %15.8e %15.8e\n", box.x, box.y, box.z);
-#ifdef TESTING
         for (unsigned int i=0; i < pvec.size(); i++) {
-            fprintf (outfile, "%15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e %d\n",
-                    geo.box.x * ((pvec[i].pos.x) - anInt(pvec[i].pos.x)),
-                    geo.box.y * ((pvec[i].pos.y) - anInt(pvec[i].pos.y)),
-                    geo.box.z * ((pvec[i].pos.z) - anInt(pvec[i].pos.z)),
-                    pvec[i].dir.x, pvec[i].dir.y, pvec[i].dir.z,
-                    pvec[i].patchdir[0].x, pvec[i].patchdir[0].y, pvec[i].patchdir[0].z,
-                    pvec[i].switched);
+            printParticle(outfile, i);
         }
-#else
-    #ifdef WEDGE
-        for (unsigned int i=0; i < pvec.size(); i++) {
-            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
-                     geo.box.x * pvec[i].pos.x,
-                     geo.box.y * pvec[i].pos.y,
-                     geo.box.z * ((pvec[i].pos.z) - anInt(pvec[i].pos.z)),
-                     pvec[i].dir.x, pvec[i].dir.y, pvec[i].dir.z,
-                     pvec[i].patchdir[0].x, pvec[i].patchdir[0].y, pvec[i].patchdir[0].z,
-                    pvec[i].switched,
-                    pvec[i].molType);
-        }
-    #else
-        for (unsigned int i=0; i < pvec.size(); i++) {
-            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
-                     geo.box.x * ((pvec[i].pos.x) - anInt(pvec[i].pos.x)),
-                     geo.box.y * ((pvec[i].pos.y) - anInt(pvec[i].pos.y)),
-                     geo.box.z * ((pvec[i].pos.z) - anInt(pvec[i].pos.z)),
-                     pvec[i].dir.x, pvec[i].dir.y, pvec[i].dir.z,
-                     pvec[i].patchdir[0].x, pvec[i].patchdir[0].y, pvec[i].patchdir[0].z,
-                    pvec[i].switched,
-                    pvec[i].molType);
-        }
-    #endif
-#endif
     }
 
     /**
@@ -513,6 +480,38 @@ public:
         for(unsigned int i=0; i< pvec.size(); i++)
             cout << pvec[i].molType <<"=" << pvec[i].type << ",";
         cout << endl;
+    }
+private:
+    void printParticle(FILE *outfile, long int index) {
+#ifdef TESTING
+            fprintf (outfile, "%15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e %d\n",
+                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x)),
+                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y)),
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched);
+#else // TESTING
+    #ifdef WEDGE
+            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
+                    geo.box.x * pvec[index].pos.x,
+                    geo.box.y * pvec[index].pos.y,
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched,
+                    pvec[index].molType);
+    #else // WEDGE
+            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
+                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x)),
+                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y)),
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched,
+                    pvec[index].molType);
+    #endif // WEDGE
+#endif // TESTING
     }
 };
 
