@@ -169,13 +169,6 @@ private:
 
     void clusterRotate(vector<Particle >& cluster, double max_angle);
 
-    inline Vector clusterCM(vector<int >& cluster);
-
-    inline Vector clusterCM(vector<Particle >& cluster);
-
-
-
-
     /**
      * @brief movetry Compare energy change to temperature and based on Boltzmann probability
                         return either 0 to accept or 1 to reject the move

@@ -464,6 +464,16 @@ public:
     void massCenter();
 
     /**
+     * @brief Calculate position of cluster center of mass
+     */
+    Vector clusterCM(vector<Particle> &cluster);
+
+    /**
+     * @brief Calculate position of cluster center of mass
+     */
+    Vector clusterCM(vector<int> &cluster);
+
+    /**
      * @brief partvecinit calculate vectors on particles for speedup
      */
     void partVecInit();

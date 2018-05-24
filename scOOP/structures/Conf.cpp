@@ -94,6 +94,44 @@ void Conf::massCenter() {
     return;
 }
 
+Vector Conf::clusterCM(vector<Particle> &cluster) {
+    double chainVolume=0.0;
+    Vector cluscm(0.0, 0.0, 0.0);
+
+    for(unsigned int i=0; i<cluster.size(); i++) {
+        cluscm.x += cluster[i].pos.x * topo.ia_params[cluster[i].type][cluster[i].type].volume;
+        cluscm.y += cluster[i].pos.y * topo.ia_params[cluster[i].type][cluster[i].type].volume;
+        cluscm.z += cluster[i].pos.z * topo.ia_params[cluster[i].type][cluster[i].type].volume;
+
+        chainVolume += topo.ia_params[cluster[i].type][cluster[i].type].volume;
+    }
+
+    cluscm.x /= chainVolume;
+    cluscm.y /= chainVolume;
+    cluscm.z /= chainVolume;
+
+    return cluscm;
+}
+
+Vector Conf::clusterCM(vector<int> &cluster) {
+    double chainVolume=0.0;
+    Vector cluscm(0.0, 0.0, 0.0);
+
+    for(unsigned int i=0; i<cluster.size(); i++) {
+        cluscm.x += pvec[cluster[i]].pos.x * topo.ia_params[pvec[cluster[i]].type][pvec[cluster[i]].type].volume;
+        cluscm.y += pvec[cluster[i]].pos.y * topo.ia_params[pvec[cluster[i]].type][pvec[cluster[i]].type].volume;
+        cluscm.z += pvec[cluster[i]].pos.z * topo.ia_params[pvec[cluster[i]].type][pvec[cluster[i]].type].volume;
+
+        chainVolume += topo.ia_params[pvec[cluster[i]].type][pvec[cluster[i]].type].volume;
+    }
+
+    cluscm.x /= chainVolume;
+    cluscm.y /= chainVolume;
+    cluscm.z /= chainVolume;
+
+    return cluscm;
+}
+
 void Conf::partVecInit() {
     for(unsigned int i = 0; i < pvec.size(); i++){
         if ( topo.ia_params[pvec[i].type][pvec[i].type].geotype[0]  < SP)

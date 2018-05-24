@@ -1257,8 +1257,7 @@ void MoveCreator::clusterRotate(vector<Particle> &cluster, double max_angle) {
     double vc,vs;
     Vector newaxis;
 
-    cluscm = clusterCM(cluster);
-
+    cluscm = conf->clusterCM(cluster);
     // create rotation quaternion
     newaxis.randomUnitSphere(); /*random axes for rotation*/
     vc = cos(max_angle * ran2() );
@@ -1305,7 +1304,7 @@ void MoveCreator::clusterRotate(vector<Particle> &cluster, double angle, Vector 
     Vector cluscm;
     double vc,vs;
 
-    cluscm = clusterCM(cluster);
+    cluscm = conf->clusterCM(cluster);
 
     // create rotation quaternion
     vc = cos(angle);
@@ -1348,50 +1347,12 @@ void MoveCreator::clusterRotate(vector<Particle> &cluster, double angle, Vector 
     }
 }
 
-Vector MoveCreator::clusterCM(vector<Particle> &cluster) {
-    double chainVolume=0.0;
-    Vector cluscm(0.0, 0.0, 0.0);
-
-    for(unsigned int i=0; i<cluster.size(); i++) {
-        cluscm.x += cluster[i].pos.x * topo.ia_params[cluster[i].type][cluster[i].type].volume;
-        cluscm.y += cluster[i].pos.y * topo.ia_params[cluster[i].type][cluster[i].type].volume;
-        cluscm.z += cluster[i].pos.z * topo.ia_params[cluster[i].type][cluster[i].type].volume;
-
-        chainVolume += topo.ia_params[cluster[i].type][cluster[i].type].volume;
-    }
-
-    cluscm.x /= chainVolume;
-    cluscm.y /= chainVolume;
-    cluscm.z /= chainVolume;
-
-    return cluscm;
-}
-
-Vector MoveCreator::clusterCM(vector<int> &cluster) {
-    double chainVolume=0.0;
-    Vector cluscm(0.0, 0.0, 0.0);
-
-    for(unsigned int i=0; i<cluster.size(); i++) {
-        cluscm.x += conf->pvec[cluster[i]].pos.x * topo.ia_params[conf->pvec[cluster[i]].type][conf->pvec[cluster[i]].type].volume;
-        cluscm.y += conf->pvec[cluster[i]].pos.y * topo.ia_params[conf->pvec[cluster[i]].type][conf->pvec[cluster[i]].type].volume;
-        cluscm.z += conf->pvec[cluster[i]].pos.z * topo.ia_params[conf->pvec[cluster[i]].type][conf->pvec[cluster[i]].type].volume;
-
-        chainVolume += topo.ia_params[conf->pvec[cluster[i]].type][conf->pvec[cluster[i]].type].volume;
-    }
-
-    cluscm.x /= chainVolume;
-    cluscm.y /= chainVolume;
-    cluscm.z /= chainVolume;
-
-    return cluscm;
-}
-
 void MoveCreator::clusterRotate(vector<int> &cluster, double max_angle) {
     Vector cluscm;
     double vc,vs;
     Vector newaxis;
 
-    cluscm = clusterCM(cluster);
+    cluscm = conf->clusterCM(cluster);
 
     // create rotation quaternion
     newaxis.randomUnitSphere(); /*random axes for rotation*/
@@ -1449,7 +1410,7 @@ void MoveCreator::clusterRotateD(vector<int> &cluster, double angle, Vector axis
     double vc,vs;
     Vector newaxis;
 
-    cluscm = clusterCM(cluster);
+    cluscm = conf->clusterCM(cluster);
 
     // create rotation quaternion
     vc = cos(labs(angle));
