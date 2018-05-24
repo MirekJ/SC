@@ -8,32 +8,55 @@
 #include "totalenergycalculator.h"
 #include "../structures/structures.h"
 
-/**
- * @brief contains all the particles of one cluster
- */
 typedef struct{
-    long npart;
-    long * particles;
+    std::vector<int> particles;
+    double
+        energy = 0.0,
+        nematic = 0.0,
+        radiusOfGyration = 0.0;
+    Vector nematicVector = {0,0,0};
 } Cluster;
+
 
 class ClusterSampler {
 public:
     Conf* conf;
     Sim* sim;
+    // actualy we just need options object
+
     TotalEnergyCalculator* calcEnergy;
     FileNames* files;
 
+    // IDEA is to have vector of clusters where base on options in option file different
+    // cluster definitions are used to construct clusters ... then diferent analysis
+    // being done on cluster and then print out in different outup formats
+
+
     long * clusterstat;         ///< \brief Statistics about the size of cluster
 
-    Cluster * clusters;         ///< \brief informations about the single clusters
+    std::vector<Cluster> clusters; ///< \brief informations about the single clusters
+    // what types of analysis are suppose to be calculated and included in output
+    bool
+        nematic = false,
+        sizeDistribution = false,
+        radiusOfGyration = false;
+    // how to define cluster
+    int clusterDefinition = 0; // if 0 energy based if 1 distance
+    double clusterCutoff = -0.1; // cutoff used in cluster definition ither distance or energy
+
 
     long * clusterlist;         ///< \brief clusterlist[i] = cluster index of particle i
-    double *clustersenergy;     ///< \brief list of energies of clusters
     long num_cluster;           ///< \brief number of single clusters
-    long max_clust;             ///< \brief maximal clustersize
+    unsigned long max_clust;             ///< \brief maximal clustersize
 
     ClusterSampler(Conf* conf, Sim* sim, TotalEnergyCalculator* calcEnergy, FileNames* files) : conf(conf),
     sim(sim), calcEnergy(calcEnergy), files(files) {
+
+        // initialize statics base on options in options
+        clusters.reserve(MAXN);
+        if (clusterDefinition == 1) { // internaly we use only square of distance due to avoiding sqrt()
+            clusterCutoff = clusterCutoff * clusterCutoff;
+        }
 
         clusterstat = (long int*) malloc(sizeof(long) * max_clust);
         clusterlist = (long int*) malloc(sizeof(long) * MAXN);
@@ -41,12 +64,7 @@ public:
             fprintf(stderr, "\nTOPOLOGY ERROR: Could not allocate memory for clusterlist!");
             exit(1);
         }
-        clustersenergy = (double*) malloc(sizeof(double) * MAXN);
-        if(clustersenergy== NULL){
-            fprintf(stderr, "\nTOPOLOGY ERROR: Could not allocate memory for sim->clustersenergy!");
-            exit(1);
-        }
-        clusters = NULL;
+
     }
 
     ~ClusterSampler() {
@@ -55,9 +73,6 @@ public:
 
         if (clusterlist != NULL)
             free(clusterlist);
-
-        if (clustersenergy != NULL)
-            free(clustersenergy);
     }
 
     /**
@@ -93,87 +108,23 @@ private:
      */
     int sortClusterList();
 
-    /**
-     * @brief calc_clusterenergies calculate energies of clusters
-     * @return
-     */
-    int calcClusterEnergies() {
-        for(int i = 0; i < num_cluster; i++) {
-            clustersenergy[i]=0.0;
-            for(int j = 0; j < clusters[i].npart; j++) {
-                for(int k = j+1; k < clusters[i].npart; k++) {
-                    clustersenergy[i]+= calcEnergy->p2p(clusters[i].particles[j], // particle 1
-                                                       clusters[i].particles[k]);        // particle 2
-                }
-            }
-        }
-        return 0;
-    }
+    void clusterMovie();
+    void computeEnergy();
+    void computeClEnergy(Cluster *cl);
 
-    int printClusterList(FILE *stream, bool decor) {
-        if(decor){
-            fprintf(stream, "\n"
-                    "-----------------------------------------------------\n"
-                    "  The Cluster List\n"
-                    "  (Index starts with 1)\n"
-                    "-----------------------------------------------------\n");
-        }
+    void computeNematic();
+    void computeClNematic(Cluster *cl);
 
-        for(int i=0; i < (long)conf->pvec.size(); i++){
-            fprintf(stream,"%3d %3ld %8.4lf %8.4f %8.4f", i + 1,
-                    clusterlist[i] + 1,
-                    conf->pvec[i].pos.x,
-                    conf->pvec[i].pos.y,
-                    conf->pvec[i].pos.z);
-            fprintf(stream,"\n");
-        }
-        if(decor){
-            fprintf(stream,"-----------------------------------------------------\n");
-        }
-        fflush(stream);
-        return 0;
-    }
+    void computeRadiusOfGyration();
+    void computeClRadiusOfGyration(Cluster *cl);
+
+    int printClusterList(FILE *stream, bool decor);
 
 
-    int printClusters(FILE *stream, bool decor) {
-        if(decor){
-            fprintf(stream, "\n"
-                    "-----------------------------------------------------\n"
-                    "  The Clusters\n"
-                    "  (Index starts with 1)\n"
-                    "-----------------------------------------------------\n");
-        }
-        for(int i = 0; i < num_cluster; i++){
-            fprintf(stream, "%3d(%f):", i + 1,clustersenergy[i]);
-            for(int j = 0; j < clusters[i].npart; j++){
-                fprintf(stream, "%5ld[%i]", clusters[i].particles[j] + 1, conf->pvec[clusters[i].particles[j]].molType);
-            }
-            fprintf(stream, "\n");
-        }
-        if(decor){
-            fprintf(stream,"---------------------------------------------------\n");
-        }
-        fflush(stream);
-        return 0;
-    }
+    int printClusters(FILE *stream, bool decor);
 
 
-    int printClusterStat(FILE *stream, bool decor) {
-        if(decor){
-            fprintf(stream, "\n"
-                    "-----------------------------------------------------\n"
-                    "   Cluster Distribution\n"
-                    "-----------------------------------------------------\n");
-        }
-        for(int i=0; i < max_clust; i++){
-            fprintf(stream, "%5d\t%5ld\n", i + 1, clusterstat[i]);
-        }
-        if(decor){
-            fprintf(stream, "--------------------------------------------------\n");
-        }
-        fflush(stream);
-        return 0;
-    }
+    int printClusterStat(FILE *stream, bool decor);
 };
 
 

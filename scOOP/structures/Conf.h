@@ -411,6 +411,17 @@ public:
     }
 
     /**
+     * @brief draw Dumps a configuration of selected Particle to the supplied file handle.
+     * @param outfile
+     * @param vector<int>
+     */
+    void draw(FILE *outfile, std::vector<int> cluster) {
+        for (std::vector<int>::iterator it = cluster.begin(); it != cluster.end(); ++it) {
+            printParticle(outfile, *it);
+        }
+    }
+
+    /**
      * @brief Adds molecule to pvec, ensures Particle order, grouplist, conlist
      * @param molecule
      */

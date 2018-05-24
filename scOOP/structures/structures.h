@@ -91,6 +91,7 @@ public:
         sprintf(topologyInFile, "top.init");
         sprintf(topologyOutFile, "top.last");
         sprintf(moviefile, "movie");
+        sprintf(clMovieFile, "cl-movie");
         sprintf(wlinfile, "wl.dat");
         sprintf(wloutfile, "wl-new.dat");
         sprintf(statfile, "stat.dat");
@@ -114,6 +115,7 @@ public:
     char configurationoutfile[30];
     char topologyOutFile[30];
     char moviefile[30];
+    char clMovieFile[30]; // used as default name to which cluster size is added in printing
     char wloutfile[30];
     char statfile[30];
     char clusterfile[30];
@@ -160,6 +162,7 @@ public:
 
         // topology out file -> change only for grand  canonical paralel tempering
         sprintf(moviefile, "%dmovie", rank);
+        sprintf(clMovieFile, "%dcl-movie", rank);
 
         if(false /* Multiple walkers Wang-Landau */) {
             sprintf(wloutfile, "%dwl-new.dat", rank);
