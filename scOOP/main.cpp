@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
 
 #ifdef ENABLE_MPI  // Parallel tempering check
     // probability to switch replicas = exp ( -0.5 * dT*dT * N / (1 + dT) )
-    mcout.get() << "Probability to switch replicas is roughly: " << exp(-0.5 * conf->pvec.size() * sim->dtemp * sim->dtemp / (1.0 + sim->dtemp)) << endl;
+    //mcout.get() << "Probability to switch replicas is roughly: " << exp(-0.5 * conf.pvec.size()  / 1.0) << endl;
 #endif
     init.testChains(); // if no chains -> move probability of chains 0
 

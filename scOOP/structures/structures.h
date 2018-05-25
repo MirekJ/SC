@@ -99,6 +99,7 @@ public:
         sprintf(clusterfile, "cluster.dat");
         sprintf(clusterstatfile, "cluster_stat.dat");
         sprintf(energyfile, "energy.dat");
+        sprintf(temperatures, "temperatures");
 
 #ifdef ENABLE_MPI
         initMPI(rank);
@@ -122,6 +123,7 @@ public:
     char clusterfile[30];
     char clusterstatfile[30];
     char energyfile[30];
+    char temperatures[30];
 
     void initMPI(int rank) {
         FILE *infile;
