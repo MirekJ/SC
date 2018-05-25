@@ -8,6 +8,7 @@
 #include "mpicout.h"
 
 #include <array>
+#include <iomanip>
 
 extern MpiCout mcout;
 
@@ -123,18 +124,41 @@ public:
 
     string toString() {
         stringstream ss;
+        int columnWidth[]={TOPCOLUMNS};
+        ss  << "[Types]"
+            << endl
+            << "#"
+            << setw(columnWidth[0 ]-1) << "NAME"
+            << setw(columnWidth[1 ]  ) << "INDEX"
+            << setw(columnWidth[2 ]  ) << "GEOTYPE"
+            << setw(columnWidth[3 ]  ) << "EPS"
+            << setw(columnWidth[4 ]  ) << "SIGMA"
+            << setw(columnWidth[5 ]  ) << "ATD"
+            << setw(columnWidth[6 ]  ) << "ATS"
+            << setw(columnWidth[7 ]  ) << "PA"
+            << setw(columnWidth[8 ]  ) << "PS"
+            << setw(columnWidth[9 ]  ) << "LEN"
+            << setw(columnWidth[10]  ) << "PARAEPS"
+            << setw(columnWidth[11]  ) << "PROTATION"
+            << setw(columnWidth[12]  ) << "ATD2"
+            << setw(columnWidth[13]  ) << "ATS2"
+            << setw(columnWidth[14]  ) << "PA2"
+            << setw(columnWidth[15]  ) << "PAS2"
+            << setw(columnWidth[16]  ) << "PARAEPS2"
+            << setw(columnWidth[17]  ) << "CHAN"
+            << endl;
 
-        ss << "[Types]" << endl;
-        ss << "#NAME NUM GEOTYP EPS SIGMA ATTR_DIST ATTR_SW PATCH_ANGLE PATCH_SW SC_LEN Para_EPS angle2 Patch_ANGLE2 PASW2 Chiral" << endl;
         for(int i=0; i<MAXT; ++i) {
             if( !ia_params[i][i].name.empty() )
-                ss << ia_params[i][i].toString() << endl;
+                ss << ia_params[i][i].toString()
+                   << endl;
         }
 
         ss << "[Molecules]" << endl;
         for(int i=0; i<MAXMT; ++i) {
             if( !moleculeParam[i].name.empty() ) {
-                ss << moleculeParam[i].toString() << endl;
+                ss << moleculeParam[i].toString()
+                   << endl;
             }
         }
 
@@ -143,11 +167,20 @@ public:
             ss << pool.toString();
 
         if(existExclusion) {
-            ss << "[EXCLUDE]" << endl;
-            for(int i=0; i < MAXT; ++i)
-                for(int j=i; j<MAXT; ++j)
-                    if( exclusions[i][j] )
-                        ss << i << " " << j << endl;
+            ss << "[EXCLUDE]"
+               << endl;
+            for(int i=0; i < MAXT; ++i) {
+                for(int j=i; j<MAXT; ++j) {
+                    if( exclusions[i][0][j][0] )
+                        ss << i << " " << 0 << "  " << j << " " << 0 << endl;
+                    if ( exclusions[i][0][j][1] )
+                        ss << i << " " << 0 << "  " << j << " " << 1 << endl;
+                    if ( exclusions[i][1][j][0] )
+                        ss << i << " " << 1 << "  " << j << " " << 0 << endl;
+                    if ( exclusions[i][1][j][1] )
+                        ss << i << " " << 1 << "  " << j << " " << 1 << endl;
+                }
+            }
         }
 
         ss << ((exter.exist) ? exter.toString() : string());

@@ -86,6 +86,9 @@
 
 #define MAXT 40           /* Maximum number of types we have*/
 #define MAXMT 100         /* Maximum number of molecular types */
+/*Macro fill in default lengths of clumns in topology file*/
+/*                 NAME INDEX GEOTYPE EPS SIGMA ATD ATS PA PS LEN PARAEPS PROTATION ATD2 ATS2 PA2 PAS2 PARAEPS2 CHAN */
+#define TOPCOLUMNS    8,    6,     10,  8,    8, 13, 13, 8, 8,  6,      8,       10,  13,  13,  8,   8,       8,   8
 
 /*Reading topology*/
 #define SMSTR 64           /* Small string length */

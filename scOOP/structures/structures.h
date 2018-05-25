@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <array>
+#include <iomanip>
 
 
 class Molecule : public vector<int > {
@@ -270,24 +271,58 @@ public:
 
     string toString() {
         stringstream ss;
+        int columnWidth[]={TOPCOLUMNS};
 
-        ss << name << " " << type << " " << convertGeotype(geotype[0]) << " " << epsilon << " " << sigma;
-        if(geotype[0] == SPN) return ss.str();
+        ss << setw(columnWidth[0]) << name
+           << setw(columnWidth[1]) << type
+           << setw(columnWidth[2]) << convertGeotype(geotype[0])
+           << setw(columnWidth[3]) << epsilon
+           << setw(columnWidth[4]) << sigma;
 
-        ss << " " << pdis << " " << pswitch;
-        if(geotype[0] == SPA) return ss.str();
+        if (geotype[0] == SPN)
+            return ss.str();
 
-        ss << " " << pangl[0] << " " << panglsw[0] << " " << len[0] << " " << parallel[0];
-        if(geotype[0] == PSC || geotype[0] == CPSC) return ss.str();
-        if(geotype[0] == CHPSC || geotype[0] == CHCPSC) {
-            ss << " " << chiral;
+        if (geotype[0] == SCN) {
+            ss << setw(columnWidth[5]+columnWidth[6]+columnWidth[7]+columnWidth[8]+columnWidth[9]) << len[0];
             return ss.str();
         }
 
-        ss << " " << patchRot << " " << pangl[2] << " " << panglsw[2] << " " << parallel[1];
-        if(geotype[0] == TPSC || geotype[0] == TCPSC) return ss.str();
+        ss << setw(columnWidth[5]) << setprecision(10) << pdis_x[0]
+           << setw(columnWidth[6]) << setprecision(10) << pswitch_x[0];
+
+        if(geotype[0] == SPA)
+            return ss.str();
+
+        if (geotype[0] == SCA) {
+            ss << setw(columnWidth[7]+columnWidth[8]+columnWidth[9]) << len[0];
+            return ss.str();
+        }
+
+        ss << setw(columnWidth[7] ) << pangl[0]
+           << setw(columnWidth[8] ) << panglsw[0]
+           << setw(columnWidth[9] ) << len[0]
+           << setw(columnWidth[10]) << parallel[0];
+        if(geotype[0] == PSC || geotype[0] == CPSC)
+            return ss.str();
+
+        if(geotype[0] == CHPSC || geotype[0] == CHCPSC) {
+            ss << setw(columnWidth[11]+columnWidth[12]+columnWidth[13]+columnWidth[14]+columnWidth[15]+columnWidth[16]+columnWidth[17]) << chiral;
+            return ss.str();
+        }
+
+        ss << setw(columnWidth[11]) << patchRot
+           << setw(columnWidth[12]) << setprecision(10) << pdis_x[3]
+           << setw(columnWidth[13]) << setprecision(10) << pswitch_x[3]
+           << setw(columnWidth[14]) << pangl[2]
+           << setw(columnWidth[15]) << panglsw[2]
+           << setw(columnWidth[16]) << parallel[3];
+
+        if(geotype[0] == TPSC || geotype[0] == TCPSC) {
+            return ss.str();
+        }
+
         if(geotype[0] == TCHPSC || geotype[0] == TCHCPSC) {
-            ss << " " << chiral;
+            ss << setw(columnWidth[17]) << chiral;
             return ss.str();
         }
         return ss.str();
