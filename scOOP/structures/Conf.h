@@ -422,6 +422,17 @@ public:
     }
 
     /**
+     * @brief draw Dumps a configuration of selected Particle and shift them by shift vector to the supplied file handle.
+     * @param outfile
+     * @param vector<int>
+     */
+    void draw(FILE *outfile, std::vector<int> cluster, Vector shift) {
+        for (std::vector<int>::iterator it = cluster.begin(); it != cluster.end(); ++it) {
+            printParticle(outfile, *it, shift);
+        }
+    }
+
+    /**
      * @brief Adds molecule to pvec, ensures Particle order, grouplist, conlist
      * @param molecule
      */
@@ -496,27 +507,58 @@ private:
     void printParticle(FILE *outfile, long int index) {
 #ifdef TESTING
             fprintf (outfile, "%15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e %d\n",
-                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x)),
-                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y)),
-                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x) + 0.5),
+                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y) + 0.5),
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z) + 0.5),
                     pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
                     pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
                     pvec[index].switched);
 #else // TESTING
     #ifdef WEDGE
             fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
-                    geo.box.x * pvec[index].pos.x,
-                    geo.box.y * pvec[index].pos.y,
-                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    geo.box.x * (pvec[index].pos.x + 0.5),
+                    geo.box.y * (pvec[index].pos.y + 0.5),
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z) + 0.5),
                     pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
                     pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
                     pvec[index].switched,
                     pvec[index].molType);
     #else // WEDGE
             fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
-                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x)),
-                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y)),
-                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z)),
+                    geo.box.x * ((pvec[index].pos.x) - anInt(pvec[index].pos.x) + 0.5),
+                    geo.box.y * ((pvec[index].pos.y) - anInt(pvec[index].pos.y) + 0.5),
+                    geo.box.z * ((pvec[index].pos.z) - anInt(pvec[index].pos.z) + 0.5),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched,
+                    pvec[index].molType);
+    #endif // WEDGE
+#endif // TESTING
+    }
+    void printParticle(FILE *outfile, long int index, Vector shift) {
+#ifdef TESTING
+            fprintf (outfile, "%15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e   %15.6e %15.6e %15.6e %d\n",
+                    geo.box.x * ((pvec[index].pos.x-shift.x) - anInt(pvec[index].pos.x-shift.x) + 0.5),
+                    geo.box.y * ((pvec[index].pos.y-shift.y) - anInt(pvec[index].pos.y-shift.y) + 0.5),
+                    geo.box.z * ((pvec[index].pos.z-shift.z) - anInt(pvec[index].pos.z-shift.z) + 0.5),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched);
+#else // TESTING
+    #ifdef WEDGE
+            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
+                    geo.box.x * (pvec[index].pos.x - shift.x + 0.5),
+                    geo.box.y * (pvec[index].pos.y - shift.y + 0.5),
+                    geo.box.z * ((pvec[index].pos.z-shift.z) - anInt(pvec[index].pos.z-shift.z) + 0.5),
+                    pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
+                    pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
+                    pvec[index].switched,
+                    pvec[index].molType);
+    #else // WEDGE
+            fprintf (outfile, "%15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e   %15.8e %15.8e %15.8e %d %d\n",
+                    geo.box.x * ((pvec[index].pos.x-shift.x) - anInt(pvec[index].pos.x-shift.x) + 0.5),
+                    geo.box.y * ((pvec[index].pos.y-shift.y) - anInt(pvec[index].pos.y-shift.y) + 0.5),
+                    geo.box.z * ((pvec[index].pos.z-shift.z) - anInt(pvec[index].pos.z-shift.z) + 0.5),
                     pvec[index].dir.x        , pvec[index].dir.y        , pvec[index].dir.z        ,
                     pvec[index].patchdir[0].x, pvec[index].patchdir[0].y, pvec[index].patchdir[0].z,
                     pvec[index].switched,

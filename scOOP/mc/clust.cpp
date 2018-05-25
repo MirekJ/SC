@@ -268,7 +268,7 @@ void ClusterSampler::clusterMovie() {
                 conf->geo.box.y,
                 conf->geo.box.z
                 );
-        conf->draw(clFiles[(*it).particles.size()], (*it).particles);
+        conf->draw(clFiles[(*it).particles.size()], (*it).particles, conf->clusterCM((*it).particles));
     }
     for (unsigned int i=1; i<=max_clust; i++) {
         fclose(clFiles.back());
