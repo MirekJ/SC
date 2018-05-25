@@ -58,6 +58,7 @@ public:
 
     double cell;                  ///< \brief Maximum translation of all types
     double max_dist_squared[MAXT][MAXT]; ///< \brief Stored cutoffs of all particle types for pairList
+    double customCutoff = 0.0;
 
     int wlm[2];                ///< \brief Wang landau method (wl)
     int wlmtype;            ///< \brief Atom type for the Wang landau method (wl)
@@ -157,11 +158,12 @@ private:
             {"temper",              Double, false, &temper},
             {"paraltemper",         Double, false, &paraltemper},
             {"transmx",             Double, false, &transmx},
-            {"transmx_type",        Tuple, true, &transmx_type}, // default se by transmx
+            {"transmx_type",        Tuple,  true,  &transmx_type}, // default se by transmx
             {"rotmx",               Double, false, &rotmx},
-            {"coneAngle",           Double, true, &coneAngle}, // default value given in constructor of sim
+            {"coneAngle",           Double, true,  &coneAngle}, // default value given in constructor of sim
             {"chainmmx",            Double, false, &chainmmx},
             {"chainrmx",            Double, false, &chainrmx},
+            {"custom_cut",          Double, true,  &customCutoff}, // default 0.0
             {"last",                Int,    false, NULL}
         };
         while(options[++num_options].var != NULL)
@@ -294,6 +296,9 @@ private:
         mcout.get() << " Inititial maximum geo.box edge change:              " << stat.edge.mx << endl;
         mcout.get() << " Initial maximum chain displacement:                 " << chainmmx << endl;
         mcout.get() << " Inititial maximum chain angular change (degrees):   " << chainrmx << endl;
+        if(customCutoff != 0.0){
+        mcout.get() << " Custom cutoff:                                      " << customCutoff << endl;
+        }
         mcout.get() << " Temperature in kT/e:                                " << temper << endl;
         mcout.get() << " Parallel tempering temperature in kT/e:             " << paraltemper << endl;
         mcout.get() << " Sweeps between replica exchange:                    " << nrepchange << endl;
