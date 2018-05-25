@@ -476,7 +476,7 @@ int Topo::fillTypes(char **pline) {
             geotype_i == CHPSC ||
             geotype_i == CHCPSC
        ){
-
+            ia_params[type][type].chiral            = param[8];
         for (int i = 0; i < 2; i++){
             ia_params[type][type].chiral_cos[i]     = cos(param[8] / 360 * PI);
             ia_params[type][type].chiral_sin[i]     = sqrt(1 - ia_params[type][type].chiral_cos[i] * ia_params[type][type].chiral_cos[i]);
@@ -509,6 +509,7 @@ int Topo::fillTypes(char **pline) {
             ia_params[type][type].pswitch_x[2]      = AVER(ia_params[type][type].pswitch,param[10]);
             ia_params[type][type].pswitch_x[3]      = param[10];
 
+            ia_params[type][type].patchRot          = param[8];
         for (int i = 0; i < 2; i++){
             ia_params[type][type].csecpatchrot[i]   = cos(param[8] / 360 * PI);
             ia_params[type][type].ssecpatchrot[i]   = sqrt(1 - ia_params[type][type].csecpatchrot[i] * ia_params[type][type].csecpatchrot[i]);
@@ -538,7 +539,7 @@ int Topo::fillTypes(char **pline) {
             geotype_i == TCHPSC ||
             geotype_i == TCHCPSC
         ){
-
+            ia_params[type][type].chiral        = param[14];
         for (int i = 0; i < 2; i++){
             // Chirality data
             ia_params[type][type].chiral_cos[i] = cos(param[14] / 360 * PI);
