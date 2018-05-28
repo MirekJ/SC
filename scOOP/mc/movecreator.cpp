@@ -946,6 +946,8 @@ double MoveCreator::muVTMove() {
             sim->stat.grand[molType].muVtAverageParticles +=  conf->pvec.molCountOfType(molType);
             calcEnergy->update(EMResize()); // just a dummy datatype for resize of energy matrix
 
+            topo.system.moleculeCount[molType]++;
+
             return energy - molSize*entrophy;
         } else { // rejected
             insert.clear();
@@ -983,6 +985,8 @@ double MoveCreator::muVTMove() {
             sim->stat.grand[molType].delAcc++;
             sim->stat.grand[molType].muVtAverageParticles +=  conf->pvec.molCountOfType(molType);
             calcEnergy->update(EMResize()); // just a dummy datatype for resize of energy matrix
+
+            topo.system.moleculeCount[molType]--;
 
             return -energy + molSize*entrophy;
         } else {
