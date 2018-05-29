@@ -176,7 +176,7 @@ bool Inicializer::initConfig(FILE** infile, std::vector<Particle > &pvec, bool s
 
     }
 
-    if(check+1 < conf->pvec.size()) {
+    if(check+1 < pvec.size()) {
         cerr << "Not enough particles in " << files->configurationInFile << endl;
         exit(1);
     }
